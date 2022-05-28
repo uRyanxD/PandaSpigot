@@ -1,0 +1,241 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: hpfxd <me@hpfxd.com>
+Date: Sat, 28 May 2022 15:15:11 -0400
+Subject: [PATCH] Lighting Queue
+
+
+diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+index 9ebc710fe7cebf71c130c84da2805c4314719b92..f08ca29098e83a720c325e114d5f4134235e9a1b 100644
+--- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
++++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+@@ -34,6 +34,8 @@ public class WorldTimingsHandler {
+     public final Timing syncChunkLoadTileTicksTimer;
+     public final Timing syncChunkLoadPostTimer;
+ 
++    public final Timing lightingQueueTimer; // PandaSpigot
++
+     public WorldTimingsHandler(World server) {
+         String name = server.worldData.getName() +" - ";
+ 
+@@ -65,5 +67,7 @@ public class WorldTimingsHandler {
+         tracker = Timings.ofSafe(name + "tracker");
+         doTick = Timings.ofSafe(name + "doTick");
+         tickEntities = Timings.ofSafe(name + "tickEntities");
++
++        lightingQueueTimer = Timings.ofSafe(name + "Lighting Queue"); // PandaSpigot
+     }
+ }
+diff --git a/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java b/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java
+index 14f65a41a7711afd45fbd09007e385dfd6291719..f487e3c5eb98634bc600137b6115b6793bd19728 100644
+--- a/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java
++++ b/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java
+@@ -42,6 +42,8 @@ public class PandaSpigotWorldConfig {
+     
+     @Comment("These options control velocity players receive when damaged.")
+     public KnockbackConfig knockback;
++
++    public boolean queueLightUpdates;
+     
+     @ConfigSerializable
+     public static class KnockbackConfig {
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index ab0d41cadabe4c010751994515925525df66dace..b7cee3d1381eb794a14faaf2c53eb63ef0ae9991 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -42,6 +42,7 @@ public class Chunk {
+     private final int[] itemCounts = new int[16];
+     private final int[] inventoryEntityCounts = new int[16];
+     // PaperSpigot end
++    final PaperLightingQueue.LightingQueue lightingQueue = new PaperLightingQueue.LightingQueue(this); // PandaSpigot - lighting queue
+     private boolean done;
+     private boolean lit;
+     private boolean p;
+@@ -279,6 +280,13 @@ public class Chunk {
+     private void h(boolean flag) {
+         this.world.methodProfiler.a("recheckGaps");
+         if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
++            // PandaSpigot start
++            this.runOrQueueLightUpdate(() -> recheckGaps0(flag));
++        }
++    }
++    private void recheckGaps0(boolean flag) {
++        if (true) {
++            // PandaSpigot end
+             for (int i = 0; i < 16; ++i) {
+                 for (int j = 0; j < 16; ++j) {
+                     if (this.g[i + j * 16]) {
+@@ -613,6 +621,7 @@ public class Chunk {
+                 if (flag) {
+                     this.initLighting();
+                 } else {
++                    this.runOrQueueLightUpdate(() -> { // PandaSpigot - Queue light update
+                     int j1 = block.p();
+                     int k1 = block1.p();
+ 
+@@ -627,6 +636,7 @@ public class Chunk {
+                     if (j1 != k1 && (j1 < k1 || this.getBrightness(EnumSkyBlock.SKY, blockposition) > 0 || this.getBrightness(EnumSkyBlock.BLOCK, blockposition) > 0)) {
+                         this.d(i, k);
+                     }
++                    }); // PandaSpigot
+                 }
+ 
+                 TileEntity tileentity;
+@@ -1481,6 +1491,16 @@ public class Chunk {
+         this.u = i;
+     }
+ 
++    // PandaSpigot start
++    public void runOrQueueLightUpdate(Runnable runnable) {
++        if (this.world.pandaSpigotConfig.queueLightUpdates) {
++            lightingQueue.add(runnable);
++        } else {
++            runnable.run();
++        }
++    }
++    // PandaSpigot end
++
+     public static enum EnumTileEntityState {
+ 
+         IMMEDIATE, QUEUED, CHECK;
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index c4dab42bdf868f73f0c3875e8adfb852b2b02e18..3655e599819a97087d0ed46b10c537d611b0f62c 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -187,6 +187,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                  */
+                 server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(chunk.bukkitChunk, newChunk));
+             }
++            chunk.lightingQueue.processUnload(); // PandaSpigot
+ 
+             // Update neighbor counts
+             for (int x = -2; x < 3; x++) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 5773871a961eb62f66dc666adf63e379ac78af1c..7cefbaeae3c837982f9a78fe4e254c5f0d838624 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -712,7 +712,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+ 
+     protected void A() throws ExceptionWorldConflict { // CraftBukkit - added throws
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Spigot
+-        long i = System.nanoTime();
++        long i = System.nanoTime(); long startTime = i; // PandaSpigot
+ 
+         ++this.ticks;
+         if (this.T) {
+@@ -771,6 +771,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         this.methodProfiler.b();
+         this.methodProfiler.b();
+         org.spigotmc.WatchdogThread.tick(); // Spigot
++        PaperLightingQueue.processQueue(startTime); // PandaSpigot
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Spigot
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..acc597ad4e18e00297d86b6d69c40865d3dc4fac
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
+@@ -0,0 +1,90 @@
++package net.minecraft.server;
++
++import java.util.ArrayDeque;
++import java.util.Collection;
++
++class PaperLightingQueue {
++    private static final long MAX_TIME = (long) (1000000000 / 20 * .95);
++    private static int updatesThisTick;
++
++
++    static void processQueue(long curTime) {
++        updatesThisTick = 0;
++
++        final long startTime = System.nanoTime();
++        final long maxTickTime = MAX_TIME - (startTime - curTime);
++
++        START:
++        for (WorldServer world : MinecraftServer.getServer().worlds) {
++            if (!world.pandaSpigotConfig.queueLightUpdates) {
++                continue;
++            }
++
++            Collection<Chunk> loadedChunks = world.chunkProviderServer.chunks.values();
++            for (Chunk chunk : loadedChunks.toArray(new Chunk[0])) {
++                if (chunk.lightingQueue.processQueue(startTime, maxTickTime)) {
++                    break START;
++                }
++            }
++        }
++    }
++
++    static class LightingQueue extends ArrayDeque<Runnable> {
++        final private Chunk chunk;
++
++        LightingQueue(Chunk chunk) {
++            super();
++            this.chunk = chunk;
++        }
++
++        /**
++         * Processes the lighting queue for this chunk
++         *
++         * @param startTime If start Time is 0, we will not limit execution time
++         * @param maxTickTime Maximum time to spend processing lighting updates
++         * @return true to abort processing furthur lighting updates
++         */
++        private boolean processQueue(long startTime, long maxTickTime) {
++            if (this.isEmpty()) {
++                return false;
++            }
++            chunk.world.timings.lightingQueueTimer.startTiming();
++            Runnable lightUpdate;
++            while ((lightUpdate = this.poll()) != null) {
++                lightUpdate.run();
++                if (startTime > 0 && ++PaperLightingQueue.updatesThisTick % 10 == 0 && PaperLightingQueue.updatesThisTick > 10) {
++                    if (System.nanoTime() - startTime > maxTickTime) {
++                        return true;
++                    }
++                }
++            }
++            chunk.world.timings.lightingQueueTimer.stopTiming();
++
++            return false;
++        }
++
++        /**
++         * Flushes lighting updates to unload the chunk
++         */
++        void processUnload() {
++            if (!chunk.world.pandaSpigotConfig.queueLightUpdates) {
++                return;
++            }
++            processQueue(0, 0); // No timeout
++
++            final int radius = 1; // TODO: bitflip, why should this ever be 2?
++            for (int x = chunk.locX - radius; x <= chunk.locX + radius; ++x) {
++                for (int z = chunk.locZ - radius; z <= chunk.locZ + radius; ++z) {
++                    if (x == chunk.locX && z == chunk.locZ) {
++                        continue;
++                    }
++
++                    Chunk neighbor = ((ChunkProviderServer) chunk.world.chunkProvider).chunks.get(ChunkCoordIntPair.a(x, z));
++                    if (neighbor != null) {
++                        neighbor.lightingQueue.processQueue(0, 0); // No timeout
++                    }
++                }
++            }
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index b75d78da71f24a0b02bf709d026389add0556489..783efedd535f310332094eb5bc13b7d1433d013d 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -414,7 +414,7 @@ public abstract class World implements IBlockAccess {
+ 
+                 if (block.p() != block1.p() || block.r() != block1.r()) {
+                     this.methodProfiler.a("checkLight");
+-                    this.x(blockposition);
++                    chunk.runOrQueueLightUpdate(() -> this.x(blockposition)); // PandaSpigot - Queue light update
+                     this.methodProfiler.b();
+                 }
+ 
