@@ -1,0 +1,107 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sat, 28 May 2022 21:37:08 -0300
+Subject: [PATCH] Backport Paper 1.13 queue light changes
+
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index b7cee3d1381eb794a14faaf2c53eb63ef0ae9991..7a9ce06be970e86f1bb4652ea2dc429af23ee099 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -279,14 +279,7 @@ public class Chunk {
+ 
+     private void h(boolean flag) {
+         this.world.methodProfiler.a("recheckGaps");
+-        if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
+-            // PandaSpigot start
+-            this.runOrQueueLightUpdate(() -> recheckGaps0(flag));
+-        }
+-    }
+-    private void recheckGaps0(boolean flag) {
+-        if (true) {
+-            // PandaSpigot end
++        if (this.areNeighborsLoaded(1)) { // PandaSpigot - 1.13 queue light changes
+             for (int i = 0; i < 16; ++i) {
+                 for (int j = 0; j < 16; ++j) {
+                     if (this.g[i + j * 16]) {
+@@ -337,7 +330,7 @@ public class Chunk {
+     }
+ 
+     private void a(int i, int j, int k, int l) {
+-        if (l > k && this.world.areChunksLoaded(new BlockPosition(i, 0, j), 16)) {
++        if (l > k && this.areNeighborsLoaded(1)) { // PandaSpigot - 1.13 queue light updates
+             for (int i1 = k; i1 < l; ++i1) {
+                 this.world.updateLight(EnumSkyBlock.SKY, new BlockPosition(i, i1, j)); // PaperSpigot - Asynchronous lighting updates
+             }
+diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
+index acc597ad4e18e00297d86b6d69c40865d3dc4fac..72815e38f6fcc6d278d94c1e8e31c4f71de6bfa0 100644
+--- a/src/main/java/net/minecraft/server/PaperLightingQueue.java
++++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
+@@ -4,16 +4,19 @@ import java.util.ArrayDeque;
+ import java.util.Collection;
+ 
+ class PaperLightingQueue {
+-    private static final long MAX_TIME = (long) (1000000000 / 20 * .95);
+-    private static int updatesThisTick;
+-
++    private static final long MAX_TIME = (long) (1000000000 / 20 * 1.15); // PandaSpigot - 1.13 queue light changes
+ 
+     static void processQueue(long curTime) {
+-        updatesThisTick = 0;
+ 
+         final long startTime = System.nanoTime();
+         final long maxTickTime = MAX_TIME - (startTime - curTime);
+ 
++        // PandaSpigot start - 1.13 queue light changes
++        if (maxTickTime <= 0) {
++            return;
++        }
++        // PandaSpigot end
++
+         START:
+         for (WorldServer world : MinecraftServer.getServer().worlds) {
+             if (!world.pandaSpigotConfig.queueLightUpdates) {
+@@ -48,15 +51,20 @@ class PaperLightingQueue {
+             if (this.isEmpty()) {
+                 return false;
+             }
++            // PandaSpigot start - 1.13 queue light changes
++            if (isOutOfTime(maxTickTime, startTime)) {
++                return true;
++            }
++            // PandaSpigot end
+             chunk.world.timings.lightingQueueTimer.startTiming();
+             Runnable lightUpdate;
+             while ((lightUpdate = this.poll()) != null) {
+                 lightUpdate.run();
+-                if (startTime > 0 && ++PaperLightingQueue.updatesThisTick % 10 == 0 && PaperLightingQueue.updatesThisTick > 10) {
+-                    if (System.nanoTime() - startTime > maxTickTime) {
+-                        return true;
+-                    }
++                // PandaSpigot start - 1.13 queue light changes
++                if (isOutOfTime(maxTickTime, startTime)) {
++                    return true;
++                // PandaSpigot end
+                }
+            }
+            chunk.world.timings.lightingQueueTimer.stopTiming();
+ 
+@@ -72,7 +80,7 @@ class PaperLightingQueue {
+             }
+             processQueue(0, 0); // No timeout
+ 
+-            final int radius = 1; // TODO: bitflip, why should this ever be 2?
++            final int radius = 1;
+             for (int x = chunk.locX - radius; x <= chunk.locX + radius; ++x) {
+                 for (int z = chunk.locZ - radius; z <= chunk.locZ + radius; ++z) {
+                     if (x == chunk.locX && z == chunk.locZ) {
+@@ -87,4 +95,9 @@ class PaperLightingQueue {
+             }
+         }
+     }
++    // PandaSpigot start - 1.13 queue light changes
++    private static boolean isOutOfTime(long maxTickTime, long startTime) {
++        return startTime > 0 && System.nanoTime() - startTime > maxTickTime;
++    }
++    // PandaSpigot end
+ }
