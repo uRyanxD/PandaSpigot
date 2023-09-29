@@ -6,7 +6,7 @@ Subject: [PATCH] Add SpongeAbsorbEvent
 
 diff --git a/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java b/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..12c2ee9fbee73ba2f39a861aed3e0cc983bf93e0
+index 0000000000000000000000000000000000000000..dffde947b8292fecb8e742446103097e41d9a4ee
 --- /dev/null
 +++ b/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java
 @@ -0,0 +1,60 @@
@@ -57,8 +57,8 @@ index 0000000000000000000000000000000000000000..12c2ee9fbee73ba2f39a861aed3e0cc9
 +    }
 +
 +    @Override
-+    public void setCancelled(boolean cancelled) {
-+        this.cancelled = cancelled;
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
 +    }
 +
 +    @Override
