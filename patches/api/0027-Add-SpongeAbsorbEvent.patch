@@ -6,7 +6,7 @@ Subject: [PATCH] Add SpongeAbsorbEvent
 
 diff --git a/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java b/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e4ec822e57d2e74656d0c50e4bbd7436e514635d
+index 0000000000000000000000000000000000000000..12c2ee9fbee73ba2f39a861aed3e0cc983bf93e0
 --- /dev/null
 +++ b/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java
 @@ -0,0 +1,60 @@
@@ -36,7 +36,7 @@ index 0000000000000000000000000000000000000000..e4ec822e57d2e74656d0c50e4bbd7436
 +
 +    public SpongeAbsorbEvent(Block block, List<BlockState> waterblocks) {
 +        super(block);
-+        this.block = waterblocks;
++        this.blocks = waterblocks;
 +    }
 +
 +    /**
