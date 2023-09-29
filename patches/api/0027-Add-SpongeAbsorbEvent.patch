@@ -6,7 +6,7 @@ Subject: [PATCH] Add SpongeAbsorbEvent
 
 diff --git a/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java b/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0bb3bc3b344964417a6cec8ca13d27c2bcba227b
+index 0000000000000000000000000000000000000000..e4ec822e57d2e74656d0c50e4bbd7436e514635d
 --- /dev/null
 +++ b/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java
 @@ -0,0 +1,60 @@
@@ -17,6 +17,7 @@ index 0000000000000000000000000000000000000000..0bb3bc3b344964417a6cec8ca13d27c2
 +import org.bukkit.block.BlockState;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
++import org.bukkit.event.block.BlockEvent;
 +
 +/**
 + * Called when a sponge absorbs water from the world.
@@ -31,7 +32,7 @@ index 0000000000000000000000000000000000000000..0bb3bc3b344964417a6cec8ca13d27c2
 +
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean cancelled = false;
-+    private List<BlockState> blocks;
++    private final List<BlockState> blocks;
 +
 +    public SpongeAbsorbEvent(Block block, List<BlockState> waterblocks) {
 +        super(block);
@@ -61,12 +62,11 @@ index 0000000000000000000000000000000000000000..0bb3bc3b344964417a6cec8ca13d27c2
 +    }
 +
 +    @Override
-+    public static HandlerList getHandlerList() {
++    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @Override
-+    public HandlerList getHandlers() {
++    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
