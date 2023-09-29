@@ -5,7 +5,7 @@ Subject: [PATCH] Implement SpongeAbsorbEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockSponge.java b/src/main/java/net/minecraft/server/BlockSponge.java
-index de7714ea58edd5e2e887c50bebd9a5b875676e18..f2a85e2630ffd10908ff69900bf6c83df300a0a8 100644
+index de7714ea58edd5e2e887c50bebd9a5b875676e18..74817535a6e186f8eef62c7f26a64d68783e75a4 100644
 --- a/src/main/java/net/minecraft/server/BlockSponge.java
 +++ b/src/main/java/net/minecraft/server/BlockSponge.java
 @@ -4,6 +4,10 @@ import com.google.common.collect.Lists;
@@ -14,7 +14,7 @@ index de7714ea58edd5e2e887c50bebd9a5b875676e18..f2a85e2630ffd10908ff69900bf6c83d
  import java.util.LinkedList;
 +import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 +import org.bukkit.block.BlockState;
-+import org.bukkit.event.block.SpongeAbsorbEvent;
++import org.bukkkit.event.block.SpongeAbsorbEvent;
 +import java.util.List;
  
  public class BlockSponge extends Block {
