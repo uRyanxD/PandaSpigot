@@ -36,31 +36,8 @@ function import {
     fi
 )
 
+#import AxisAlignedBB
 
-
-files=$(cat "$basedir/patches/server/"* | grep "+++ b/src/main/java/net/minecraft/server/" | sort | uniq | sed 's/\+\+\+ b\/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g')
-
-nonnms=$(grep -R "new file mode" -B 1 "$basedir/patches/server/" | grep -v "new file mode" | grep -oE "net\/minecraft\/server\/.*.java" | grep -oE "[A-Za-z]+?.java$" --color=none | sed 's/.java//g')
-function containsElement {
-	local e
-	for e in "${@:2}"; do
-		[[ "$e" == "$1" ]] && return 0;
-	done
-	return 1
-}
-set +e
-for f in $files; do
-	containsElement "$f" ${nonnms[@]}
-	if [ "$?" == "1" ]; then
-		if [ ! -f "$workdir/Paper/PaperSpigot-Server/src/main/java/net/minecraft/server/$f.java" ]; then
-			if [ ! -f "$decompiledir/$nms/$f.java" ]; then
-				echo "$(color 1 31) ERROR!!! Missing NMS$(color 1 34) $f $(colorend)";
-			else
-				import $f
-			fi
-		fi
-	fi
-done
 
 ########################################################
 ########################################################
