@@ -17,6 +17,7 @@ function applyPatch {
     what_name=$(basename "$what")
     target=$2
     branch=$3
+    patch_folder=$4
 
     cd "$basedir/$what"
     $gitcmd fetch
@@ -45,9 +46,9 @@ function applyPatch {
     # Special case Windows handling because of ARG_MAX constraint
     if [[ $windows == "true" ]]; then
         echo "  Using workaround for Windows ARG_MAX constraint"
-        find "$basedir/${what_name}-Patches/"*.patch -print0 | xargs -0 $applycmd
+        find "$basedir/$patch_folder/"*.patch -print0 | xargs -0 $applycmd
     else
-        $applycmd "$basedir/${what_name}-Patches/"*.patch
+        $applycmd "$basedir/$patch_folder/"*.patch
     fi
 
     if [ "$?" != "0" ]; then

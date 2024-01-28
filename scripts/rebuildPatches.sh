@@ -29,9 +29,10 @@ function savePatches {
     what=$1
     what_name=$(basename "$what")
     target=$2
+    patch_folder=$3
     echo "Formatting patches for $what..."
 
-    cd "$basedir/${what_name}-Patches/"
+    cd "$basedir/$patch_folder/"
     if [ -d "$basedir/$target/.git/rebase-apply" ]; then
         # in middle of a rebase, be smarter
         echo "REBASE DETECTED - PARTIAL SAVE"
@@ -50,21 +51,21 @@ function savePatches {
 
     cd "$basedir/$target"
 
-    $gitcmd format-patch --zero-commit --full-index --no-signature --no-stat -N -o "$basedir/${what_name}-Patches/" upstream/upstream >/dev/null
+    $gitcmd format-patch --zero-commit --full-index --no-signature --no-stat -N -o "$basedir/$patch_folder/" upstream/upstream >/dev/null
     cd "$basedir"
-    $gitcmd add --force -A "$basedir/${what_name}-Patches"
+    $gitcmd add --force -A "$basedir/$patch_folder"
     if [ "$nofilter" == "0" ]; then
-        cleanupPatches "$basedir/${what_name}-Patches"
+        cleanupPatches "$basedir/$patch_folder"
     fi
-    echo "Patches saved for $what to $what_name-Patches/"
+    echo "Patches saved for $what to $patch_folder/"
 }
 
-savePatches "$workdir/Paper/PaperSpigot-API" "PandaSpigot-API"
+savePatches "$workdir/Paper/PaperSpigot-API" "PandaSpigot-API" "patches/api"
 if [ -f "$basedir/PandaSpigot-API/.git/patch-apply-failed" ]; then
     echo "$(color 1 31)[[[ WARNING ]]] $(color 1 33)- Not saving PandaSpigot-Server as it appears PandaSpigot-API did not apply clean.$(colorend)"
     echo "$(color 1 33)If this is a mistake, delete $(color 1 34)PandaSpigot-API/.git/patch-apply-failed$(color 1 33) and run rebuild again.$(colorend)"
     echo "$(color 1 33)Otherwise, rerun ./panda patch to have a clean PandaSpigot-API apply so the latest PandaSpigot-Server can build.$(colorend)"
 else
-    savePatches "$workdir/Paper/PaperSpigot-Server" "PandaSpigot-Server"
+    savePatches "$workdir/Paper/PaperSpigot-Server" "PandaSpigot-Server" "patches/server"
 fi
 ) || exit 1
