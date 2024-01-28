@@ -78,6 +78,6 @@ done
 set -e
 cd "$workdir/Paper/PaperSpigot-Server/"
 rm -rf nms-patches applyPatches.sh makePatches.sh README.md >/dev/null 2>&1
-$gitcmd add . -A >/dev/null 2>&1
+$gitcmd add --force . -A >/dev/null 2>&1
 echo -e "mc-dev Imports\n\n$MODLOG" | $gitcmd commit . -F -
 )
