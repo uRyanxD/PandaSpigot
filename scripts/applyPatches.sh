@@ -74,34 +74,39 @@ function applyPatch {
     fi
 }
 
-# Move into paper dir
-cd "$workdir/Paper"
-basedir=$(pwd)
-# Apply Spigot
-(
-    applyPatch Bukkit Spigot-API HEAD &&
-    applyPatch CraftBukkit Spigot-Server patched
-) || (
-    echo "Failed to apply Spigot Patches"
+if [ "$2" == "--setup" ] || [ "$2" == "--jar" ]; then
+    # Move into Paper dir
+    cd "$workdir/Paper"
+    basedir=$(pwd)
+    # Apply Spigot
+    (
+        applyPatch Bukkit Spigot-API HEAD &&
+        applyPatch CraftBukkit Spigot-Server patched
+    ) || (
+        echo "Failed to apply Spigot Patches"
+        exit 1
+    ) || exit 1
+
+    # Apply PaperSpigot
+    (
+        applyPatch Spigot-API PaperSpigot-API HEAD &&
+        applyPatch Spigot-Server PaperSpigot-Server HEAD
+    ) || (
+        echo "Failed to apply PaperSpigot Patches"
+        exit 1
+    ) || exit 1
+
+    # Move out of PaperSpigot
+    basedir="$1"
+    cd "$basedir"
+
+    echo "Importing MC Dev"
+
+    ./scripts/importmcdev.sh "$basedir" || exit 1
+elif [ ! -d "base/Paper/PaperSpigot-Server" ]; then
+    echo "Upstream directory does not exist. Did you forget to run 'panda setup'?"
     exit 1
-) || exit 1
-
-# Apply PaperSpigot
-(
-    applyPatch Spigot-API PaperSpigot-API HEAD &&
-    applyPatch Spigot-Server PaperSpigot-Server HEAD
-) || (
-    echo "Failed to apply PaperSpigot Patches"
-    exit 1
-) || exit 1
-
-# Move out of PaperSpigot
-basedir="$1"
-cd "$basedir"
-
-echo "Importing MC Dev"
-
-./scripts/importmcdev.sh "$basedir" || exit 1
+fi
 
 # Apply PandaSpigot
 (
