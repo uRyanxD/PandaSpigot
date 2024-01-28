@@ -16,7 +16,7 @@ function cleanupPatches {
     cd "$1"
     for patch in *.patch; do
         echo "$patch"
-        diffs=$($gitcmd diff --staged "$patch" | grep --color=none -E "^(\+|\-)" | grep --color=none -Ev "(\-\-\- a|\+\+\+ b|^.index)")
+        diffs=$($gitcmd diff --staged "$patch" | grep --color=none -E "^(\+|-)" | grep --color=none -Ev "(--- a|\+\+\+ b|^.index)")
 
         if [ "x$diffs" == "x" ] ; then
             $gitcmd reset HEAD "$patch" >/dev/null
