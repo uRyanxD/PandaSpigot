@@ -105,8 +105,8 @@ echo "Importing MC Dev"
 
 # Apply PandaSpigot
 (
-    applyPatch "$workdir/Paper/PaperSpigot-API" PandaSpigot-API HEAD &&
-    applyPatch "$workdir/Paper/PaperSpigot-Server" PandaSpigot-Server HEAD
+    applyPatch "$workdir/Paper/PaperSpigot-API" PandaSpigot-API HEAD patches/api &&
+    applyPatch "$workdir/Paper/PaperSpigot-Server" PandaSpigot-Server patches/server HEAD
 ) || (
     echo "Failed to apply PandaSpigot Patches"
     exit 1
