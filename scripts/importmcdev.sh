@@ -3,7 +3,6 @@
 (
 set -e
 nms="net/minecraft/server"
-export MODLOG=""
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 source "$basedir/scripts/functions.sh"
@@ -12,21 +11,8 @@ gitcmd="git -c commit.gpgsign=false"
 workdir="$basedir/base"
 minecraftversion=$(cat "$workdir/Paper/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 decompiledir="$workdir/mc-dev/spigot"
-export importedmcdev=""
-function import {
-    export importedmcdev="$importedmcdev $1"
-    file="${1}.java"
-    target="$workdir/Paper/PaperSpigot-Server/src/main/java/$nms/$file"
-    base="$decompiledir/$nms/$file"
-
-    if [[ ! -f "$target" ]]; then
-        export MODLOG="$MODLOG  Imported $file from mc-dev\n";
-        #echo "Copying $base to $target"
-        cp "$base" "$target" || exit 1
-    else
-        echo "UN-NEEDED IMPORT: $file"
-    fi
-}
+find "$decompiledir/$nms" -name '*.java' -type f -exec cp -nt "$workdir/Paper/PaperSpigot-Server/src/main/java/$nms" {} +
+cp -rt "$workdir/Paper/PaperSpigot-Server/src/main/resources" "$decompiledir/assets" "$decompiledir/yggdrasil_session_pubkey.der"
 
 (
     cd "$workdir/Paper/PaperSpigot-Server/"
@@ -53,5 +39,5 @@ set -e
 cd "$workdir/Paper/PaperSpigot-Server/"
 rm -rf nms-patches applyPatches.sh makePatches.sh README.md >/dev/null 2>&1
 $gitcmd add --force . -A >/dev/null 2>&1
-echo -e "mc-dev Imports\n\n$MODLOG" | $gitcmd commit . -F -
+echo -e "mc-dev Imports" | $gitcmd commit . -F -
 )
