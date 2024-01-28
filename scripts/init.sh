@@ -40,7 +40,7 @@ do
     file="$(echo "$file" | cut -d. -f1).java"
     cp "$nms/$file" "$cb/$file"
 done
-$gitcmd add src
+$gitcmd add --force src
 $gitcmd commit -m "Minecraft $ $(date)" --author="Vanilla <auto@mated.null>"
 
 # apply patches
@@ -57,7 +57,7 @@ do
     "$patch" -s -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
 done
 
-$gitcmd add src
+$gitcmd add --force src
 $gitcmd commit -m "CraftBukkit $ $(date)" --author="CraftBukkit <auto@mated.null>"
 $gitcmd checkout -f HEAD~2
 )
