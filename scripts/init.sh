@@ -4,9 +4,9 @@
 set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
-workdir="$basedir/work"
-minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
-spigotdecompiledir="$workdir/Minecraft/$minecraftversion/spigot"
+workdir="$basedir/base"
+minecraftversion=$(cat "$workdir/Paper/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
+spigotdecompiledir="$workdir/mc-dev/spigot"
 nms="$spigotdecompiledir"
 cb="src/main/java"
 gitcmd="git -c commit.gpgsign=false"
