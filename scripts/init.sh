@@ -9,7 +9,6 @@ minecraftversion=$(cat "$workdir/Paper/BuildData/info.json"  | grep minecraftVer
 spigotdecompiledir="$workdir/mc-dev/spigot"
 nms="$spigotdecompiledir/net/minecraft/server"
 cb="src/main/java/net/minecraft/server"
-resources="src/main/resources"
 gitcmd="git -c commit.gpgsign=false"
 
 # https://stackoverflow.com/a/38595160
@@ -29,37 +28,50 @@ if [ "x$patch" == "x" ]; then
     patch="$basedir/hctap.exe"
 fi
 
+# apply patches directly to the file tree
+# used to fix issues from upstream source repos
+cd "$basedir"
+prepatchesdir="$basedir/scripts/pre-source-patches"
+for file in $(ls "$prepatchesdir")
+do
+    if [ $file == "README.md" ]; then
+        continue
+    fi
+
+    echo "--==-- Applying PRE-SOURCE patch: $file --==--"
+    $patch -p0 < "$prepatchesdir/$file"
+done
+
 echo "Applying CraftBukkit patches to NMS..."
 cd "$workdir/Paper/CraftBukkit"
 $gitcmd checkout -B patched HEAD >/dev/null 2>&1
-rm -rf "src/main/java/net"
+rm -rf "$cb"
+mkdir -p "$cb"
 # create baseline NMS import so we can see diff of what CB changed
-while IFS= read -r -d '' file
+for file in $(ls nms-patches)
 do
-    patchFile="$file"
-    file="$(echo "$file" | cut -d "/" -f2- | cut -d. -f1).java"
-    mkdir -p "$(dirname $cb/"$file")"
+    patchFile="nms-patches/$file"
+    file="$(echo "$file" | cut -d. -f1).java"
     cp "$nms/$file" "$cb/$file"
-done <   <(find nms-patches -type f -print0)
-$gitcmd add --force src
-$gitcmd commit -q -m "Minecraft $ $(date)" --author="Vanilla <auto@mated.null>"
+done
+$gitcmd add src
+$gitcmd commit -m "Minecraft $ $(date)" --author="Vanilla <auto@mated.null>"
 
 # apply patches
-while IFS= read -r -d '' file
+for file in $(ls nms-patches)
 do
-    patchFile="$file"
-    file="$(echo "$file" | cut -d "/" -f2- | cut -d. -f1).java"
+    patchFile="nms-patches/$file"
+    file="$(echo "$file" | cut -d. -f1).java"
 
     echo "Patching $file < $patchFile"
     set +e
     strip_cr "$nms/$file" > /dev/null
     set -e
 
-    "$patch" -s -d src/main/java -p 1 < "$patchFile"
-done <   <(find nms-patches -type f -print0)
+    "$patch" -s -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
+done
 
-
-$gitcmd add --force src
-$gitcmd commit -q -m "CraftBukkit $ $(date)" --author="CraftBukkit <auto@mated.null>"
-$gitcmd -c advice.detachedHead=false checkout -f HEAD~2
+$gitcmd add src
+$gitcmd commit -m "CraftBukkit $ $(date)" --author="CraftBukkit <auto@mated.null>"
+$gitcmd checkout -f HEAD~2
 )

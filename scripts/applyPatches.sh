@@ -10,12 +10,13 @@ applycmd="$gitcmd am --3way --ignore-whitespace"
 # Windows detection to workaround ARG_MAX limitation
 windows="$([[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]] && echo "true" || echo "false")"
 
+echo "Rebuilding Forked projects.... "
+
 function applyPatch {
     what=$1
     what_name=$(basename "$what")
     target=$2
     branch=$3
-    patch_folder=$4
 
     cd "$basedir/$what"
     $gitcmd fetch
@@ -28,7 +29,6 @@ function applyPatch {
     cd "$basedir/$target"
 
     echo "Resetting $target to $what_name..."
-    $gitcmd remote rm origin > /dev/null 2>&1
     $gitcmd remote rm upstream > /dev/null 2>&1
     $gitcmd remote add upstream "$basedir/$what" >/dev/null 2>&1
     $gitcmd checkout master 2>/dev/null || $gitcmd checkout -b master
@@ -45,9 +45,9 @@ function applyPatch {
     # Special case Windows handling because of ARG_MAX constraint
     if [[ $windows == "true" ]]; then
         echo "  Using workaround for Windows ARG_MAX constraint"
-        find "$basedir/$patch_folder/"*.patch -print0 | xargs -0 $applycmd
+        find "$basedir/${what_name}-Patches/"*.patch -print0 | xargs -0 $applycmd
     else
-        $applycmd "$basedir/$patch_folder/"*.patch
+        $applycmd "$basedir/${what_name}-Patches/"*.patch
     fi
 
     if [ "$?" != "0" ]; then
@@ -73,48 +73,39 @@ function applyPatch {
     fi
 }
 
-if [ "$2" == "--setup" ] || [ "$2" == "--jar" ]; then
-    echo "Rebuilding Forked projects.... "
-
-    # Move into Paper dir
-    cd "$workdir/Paper"
-    basedir=$(pwd)
-
-    # Apply Spigot
-    (
-        applyPatch Bukkit Spigot-API HEAD Bukkit-Patches &&
-        applyPatch CraftBukkit Spigot-Server patched CraftBukkit-Patches
-    ) || (
-        echo "Failed to apply Spigot Patches"
-        exit 1
-    ) || exit 1
-
-    # Apply Paper
-    (
-        applyPatch Spigot-API PaperSpigot-API HEAD Spigot-API-Patches &&
-        applyPatch Spigot-Server PaperSpigot-Server HEAD Spigot-Server-Patches
-    ) || (
-        echo "Failed to apply Paper Patches"
-        exit 1
-    ) || exit 1
-
-    # Move out of Paper
-    basedir="$1"
-    cd "$basedir"
-
-    echo "Importing MC Dev"
-
-    ./scripts/importmcdev.sh "$basedir" || exit 1
-elif [ ! -d "base/Paper/PaperSpigot-Server" ]; then
-    echo "Upstream directory does not exist. Did you forget to run 'panda setup'?"
+# Move into paper dir
+cd "$workdir/Paper"
+basedir=$(pwd)
+# Apply Spigot
+(
+    applyPatch Bukkit Spigot-API HEAD &&
+    applyPatch CraftBukkit Spigot-Server patched
+) || (
+    echo "Failed to apply Spigot Patches"
     exit 1
-fi
+) || exit 1
+
+# Apply PaperSpigot
+(
+    applyPatch Spigot-API PaperSpigot-API HEAD &&
+    applyPatch Spigot-Server PaperSpigot-Server HEAD
+) || (
+    echo "Failed to apply PaperSpigot Patches"
+    exit 1
+) || exit 1
+
+# Move out of PaperSpigot
+basedir="$1"
+cd "$basedir"
+
+echo "Importing MC Dev"
+
+./scripts/importmcdev.sh "$basedir" || exit 1
 
 # Apply PandaSpigot
 (
-    applyPatch "base/Paper/PaperSpigot-API" PandaSpigot-API HEAD patches/api &&
-    applyPatch "base/Paper/PaperSpigot-Server" PandaSpigot-Server HEAD patches/server
-    cd "$basedir"
+    applyPatch "$workdir/Paper/PaperSpigot-API" PandaSpigot-API HEAD &&
+    applyPatch "$workdir/Paper/PaperSpigot-Server" PandaSpigot-Server HEAD
 ) || (
     echo "Failed to apply PandaSpigot Patches"
     exit 1

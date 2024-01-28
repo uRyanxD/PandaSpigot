@@ -52,7 +52,7 @@ fi
 		if [ -f "$file" ] && [[ "$filedata" == *"<<<<<"* ]]; then
 			export summaryfail="$summaryfail\nFAILED TO APPLY: $i"
 		else
-			$gitcmd add --force "$i"
+			$gitcmd add "$i"
 			export summarygood="$summarygood\nAPPLIED CLEAN: $i"
 		fi
 	done
