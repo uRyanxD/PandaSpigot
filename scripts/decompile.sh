@@ -37,7 +37,7 @@ if [ ! -d "$spigotdecompiledir/net" ]; then
     echo "Decompiling classes (stage 2)..."
     cd "$basedir"
     set +e
-    java -jar "$workdir/Paper/BuildData/bin/fernflower.jar" -dgs=1 -hdc=0 -asc=1 -udv=0 -rsy=1 -aoa=1 "$classdir" "$spigotdecompiledir"
+    java -jar "$workdir/Paper/BuildData/bin/fernflower.jar" -dgs=1 -hdc=0 -rbr=0 -asc=1 -udv=0 "$classdir" "$spigotdecompiledir"
     if [ "$?" != "0" ]; then
         rm -rf "$spigotdecompiledir/net"
         echo "Failed to decompile classes."
