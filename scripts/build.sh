@@ -8,7 +8,7 @@ gitcmd="git -c commit.gpgsign=false"
 $gitcmd submodule update --init --recursive
 
 if [ "$2" == "--setup" ] || [ "$2" == "--jar" ]; then
-    ./scripts/remap.sh "$basedir
+    ./scripts/remap.sh "$basedir"
     ./scripts/decompile.sh "$basedir"
     ./scripts/init.sh "$basedir"
 fi
