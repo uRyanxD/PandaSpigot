@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Fri, 8 Mar 2024 13:30:56 -0300
+Subject: [PATCH] Don't blindly send unlit chunks when lighting updates are
+ allowed
+
+Spigot, by default, disables several mechanisms around how chunks are
+lit, if ever, which has forced them to always send chunks before vanilla
+would consider them ready to send, causing for lots of issues around
+lighting glitches.
+
+Shamefully, the amount of work to relight chunks can be detremental
+to some servers, meaning that forcibily disabling light updates can
+cause major performance issues.
+
+as such, we make a compromise; if this "feature" is disabled, we will
+only send chunks which are actually ready to be sent, otherwise, we
+will always send chunks.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 3cb8d99311e2fa9a4a1173f6ef9e8dee957b20fa..0ad23da79db02738133cea1181bfd096b6fd1c94 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -1205,7 +1205,11 @@ public class Chunk {
+          * We cannot unfortunately do this lighting stage during chunk gen as it appears to put a lot more noticeable load on the server, than when it is done at play time.
+          * For now at least we will simply send all chunks, in accordance with pre 1.7 behaviour.
+          */
+-        return true;
++        // PandaSpigot start
++        // if randomLightUpdates are enabled, we should always return true, otherwise chunks may never send
++        // to the client due to not being lit, otherwise retain standard behavior and only send properly lit chunks.
++        return !this.world.spigotConfig.randomLightUpdates || (this.p && this.done && this.lit);
++        // PandaSpigot end
+         // Spigot End
+     }
+ 
