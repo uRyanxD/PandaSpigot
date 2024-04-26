@@ -8,7 +8,7 @@ This patch adds configuration options for:
 - Region writing (world data)
 
 diff --git a/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java b/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java
-index 29c74482046bdba073c68c3baeea010f1e134b51..75f46d3db814ae48e8a1a12884aacb8bf5afe017 100644
+index bde014f003bccca916dbc74fc27436bf4b193fdf..fb9db2dafcf180dbb25c768936cb59a58a7a3584 100644
 --- a/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java
 +++ b/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java
 @@ -22,6 +22,15 @@ public class PandaSpigotWorldConfig {
@@ -27,6 +27,21 @@ index 29c74482046bdba073c68c3baeea010f1e134b51..75f46d3db814ae48e8a1a12884aacb8b
      @Comment("These options control velocity players receive when damaged.")
      public KnockbackConfig knockback;
      
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index c4dab42bdf868f73f0c3875e8adfb852b2b02e18..e1d5ea6b2aff9d087289729159bbf6f85830923e 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -381,8 +381,10 @@ public class ChunkProviderServer implements IChunkProvider {
+ 
+                     if (chunk != null) {
+                         chunk.removeEntities();
++                        if (!this.world.pandaSpigotConfig.disableChunkSaving) { // PandaSpigot - Configurable chunk saving
+                         this.saveChunk(chunk);
+                         this.saveChunkNOP(chunk);
++                        } // PandaSpigot
+                         this.chunks.remove(chunkcoordinates); // CraftBukkit
+                     }
+ 
 diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
 index b4056a28a00ba706a4cec5c22ed815ca9c980196..ba13f3f20bb86f667178f51f4d3d1df63f5acf2d 100644
 --- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
@@ -47,17 +62,3 @@ index b4056a28a00ba706a4cec5c22ed815ca9c980196..ba13f3f20bb86f667178f51f4d3d1df6
          NBTTagCompound nbttagcompound = null;
  
          try {
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 87529552aa27fc89a542130a27a6b2bfdda44ccd..f54a279407ad09fabcac038b11e8d668e68c35f6 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -958,7 +958,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
-                 iprogressupdate.c("Saving chunks");
-             }
- 
-+            if (!this.pandaSpigotConfig.disableChunkSaving) { // PandaSpigot - Configurable chunk saving
-             this.chunkProvider.saveChunks(flag, iprogressupdate);
-+            } // PandaSpigot
-             // CraftBukkit - ArrayList -> Collection
-             Collection arraylist = this.chunkProviderServer.a();
-             Iterator iterator = arraylist.iterator();
