@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sat, 29 Jun 2024 18:21:18 -0300
+Subject: [PATCH] Don't round the location of playSound to the center of a
+ block
+
+https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/commits/bad994e7243d0cc0c63cdfae625eb7c69a30ae03#src%2Fmain%2Fjava%2Forg%2Fbukkit%2Fcraftbukkit%2Fentity%2FCraftPlayer.java
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 5dfacdde9d5702ed17c25980329803e57f1fb65a..ae4a4fda70475eff023ee53c655101c575324a72 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -404,11 +404,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void playSound(Location loc, String sound, float volume, float pitch) {
+         if (loc == null || sound == null || getHandle().playerConnection == null) return;
+ 
++        // PandaSpigot start
++        /*
+         double x = loc.getBlockX() + 0.5;
+         double y = loc.getBlockY() + 0.5;
+         double z = loc.getBlockZ() + 0.5;
++        */
++       // PandaSpigot end
+ 
+-        PacketPlayOutNamedSoundEffect packet = new PacketPlayOutNamedSoundEffect(sound, x, y, z, volume, pitch);
++        PacketPlayOutNamedSoundEffect packet = new PacketPlayOutNamedSoundEffect(sound, loc.getX(), loc.getY(), loc.getZ(), volume, pitch); // PandaSpigot
+         getHandle().playerConnection.sendPacket(packet);
+     }
+ 

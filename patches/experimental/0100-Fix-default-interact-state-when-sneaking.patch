@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sat, 29 Jun 2024 16:02:40 -0300
+Subject: [PATCH] Fix default interact state when sneaking
+
+https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/commits/622014a3b45e09eb12d721387ad16809afc8d144#nms-patches%2FPlayerInteractManager.patch //
+https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/commits/c91d092bcd5ed17990aca0583092c820a2cc0449#nms-patches%2FPlayerInteractManager.patch //
+
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index 33a0a095ff525349275e5319999c1437091e0671..881eb290e5305b005e91cbeb7cee99081a2a5f81 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -492,7 +492,7 @@ public class PlayerInteractManager {
+                 }
+ 
+                 return false;
+-            } else if (!entityhuman.isSneaking() || itemstack == null) {
++            } else if (!entityhuman.isSneaking() || entityhuman.bA() == null) {
+                 result = blockdata.getBlock().interact(world, blockposition, blockdata, entityhuman, enumdirection, f, f1, f2);
+             }
+ 
