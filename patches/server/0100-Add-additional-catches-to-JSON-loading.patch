@@ -6,7 +6,7 @@ Subject: [PATCH] Add additional catches to JSON loading
 Upstream commit: https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/commits/5bde3115bf508315e9ff2b83e1e42ecfd6eee4d7
 
 diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
-index 8e4ecfd64bab0137b1d06819bd9380643d47e92e..0b9fbea8e29f1438691e82e7649e05506144c9aa 100644
+index 8e4ecfd64bab0137b1d06819bd9380643d47e92e..50ede441ee0adbf7dde8af2041c3c2f36cd541f4 100644
 --- a/src/main/java/net/minecraft/server/JsonList.java
 +++ b/src/main/java/net/minecraft/server/JsonList.java
 @@ -174,7 +174,7 @@ public class JsonList<K, V extends JsonListEntry<K>> {
@@ -14,7 +14,7 @@ index 8e4ecfd64bab0137b1d06819bd9380643d47e92e..0b9fbea8e29f1438691e82e7649e0550
          {
              org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.INFO, "Unable to find file {0}, creating it.", this.c );
 -        } catch ( com.google.gson.JsonSyntaxException ex )
-+        } catch ( com.google.gson.JsonSyntaxException | NullPointerException ex ) // PandaSpigot - Catch NullPointerException
++        } catch ( com.google.gson.JsonSyntaxException | NullPointerException ex) // PandaSpigot - Catch NullPointerException
          {
              org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.WARNING, "Unable to read file {0}, backing it up to {0}.backup and creating new copy.", this.c );
              File backup = new File( this.c + ".backup" );
