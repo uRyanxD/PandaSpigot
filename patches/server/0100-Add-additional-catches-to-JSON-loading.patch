@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sat, 6 Jul 2024 20:30:51 -0300
+Subject: [PATCH] Add additional catches to JSON loading
+
+Upstream commit: https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/commits/5bde3115bf508315e9ff2b83e1e42ecfd6eee4d7
+
+diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
+index 8e4ecfd64bab0137b1d06819bd9380643d47e92e..0b9fbea8e29f1438691e82e7649e05506144c9aa 100644
+--- a/src/main/java/net/minecraft/server/JsonList.java
++++ b/src/main/java/net/minecraft/server/JsonList.java
+@@ -174,7 +174,7 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+         } catch ( java.io.FileNotFoundException ex )
+         {
+             org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.INFO, "Unable to find file {0}, creating it.", this.c );
+-        } catch ( com.google.gson.JsonSyntaxException ex )
++        } catch ( com.google.gson.JsonSyntaxException | NullPointerException ex ) // PandaSpigot - Catch NullPointerException
+         {
+             org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.WARNING, "Unable to read file {0}, backing it up to {0}.backup and creating new copy.", this.c );
+             File backup = new File( this.c + ".backup" );
+diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
+index d7dee8b3920b1803f751f3fa206fe035764ad6c0..296f9d843938c0f6536a611eab8d8fa725de2acd 100644
+--- a/src/main/java/net/minecraft/server/UserCache.java
++++ b/src/main/java/net/minecraft/server/UserCache.java
+@@ -211,7 +211,7 @@ public class UserCache {
+         } catch (FileNotFoundException filenotfoundexception) {
+             ;
+         // Spigot Start
+-        } catch (com.google.gson.JsonSyntaxException ex) {
++        } catch (com.google.gson.JsonSyntaxException | NullPointerException ex) { // PandaSpigot - Catch NullPointerException
+             JsonList.a.warn( "Usercache.json is corrupted or has bad formatting. Deleting it to prevent further issues." );
+             this.g.delete();
+         // Spigot End
