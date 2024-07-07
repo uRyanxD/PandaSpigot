@@ -1,0 +1,400 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sun, 7 Jul 2024 18:39:27 -0300
+Subject: [PATCH] asd
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 8a08babc132e992d3613e1281dac12875380990c..01ba07040808e5273fde2d5a0f34fbc3b901f568 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -14,8 +14,8 @@ import org.bukkit.inventory.InventoryView;
+ import org.bukkit.inventory.ItemStack;
+ import org.bukkit.inventory.PlayerInventory;
+ import org.bukkit.block.Block;
+-import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.craftbukkit.inventory.CraftContainer;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.craftbukkit.inventory.CraftInventory;
+ import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
+ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+@@ -178,7 +178,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+ 
+         IInventory iinventory = (inventory instanceof CraftInventory) ? ((CraftInventory) inventory).getInventory() : new org.bukkit.craftbukkit.inventory.InventoryWrapper(inventory);
+ 
+-        switch (type) {
++        switch (type) { // HOPPER, ANVIL, BEACON, MERCHANT, EC, BREWING, ENCHANT, FURNACE, DISPENSER, DROPPER
+             case PLAYER:
+             case CHEST:
+             case ENDER_CHEST:
+@@ -254,7 +254,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+ 
+     private void openCustomInventory(Inventory inventory, EntityPlayer player, String windowType) {
+         if (player.playerConnection == null) return;
+-        Container container = new CraftContainer(inventory, this, player.nextContainerCounter());
++        Container container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
+ 
+         container = CraftEventFactory.callInventoryOpenEvent(player, container);
+         if(container == null) return;
+@@ -328,7 +328,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         if (inventory instanceof CraftInventoryView) {
+             container = ((CraftInventoryView) inventory).getHandle();
+         } else {
+-            container = new CraftContainer(inventory, player.nextContainerCounter());
++            container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
+         }
+ 
+         // Trigger an INVENTORY_OPEN event
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+index cbfe7e1a13fea65c01aef00eee90e1f5f9b8c32d..3bea155cc7c556f0c951bdced91fe46e9f4151e5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+@@ -1,37 +1,32 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
+-import net.minecraft.server.ChatComponentText;
++import net.minecraft.server.*;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ import org.bukkit.entity.HumanEntity;
+ import org.bukkit.event.inventory.InventoryType;
+ import org.bukkit.inventory.Inventory;
+ import org.bukkit.inventory.InventoryView;
+ 
+-import net.minecraft.server.Container;
+-import net.minecraft.server.EntityHuman;
+-import net.minecraft.server.IInventory;
+-import net.minecraft.server.PacketPlayOutOpenWindow;
+-import net.minecraft.server.Slot;
+-
+ public class CraftContainer extends Container {
+     private final InventoryView view;
+     private InventoryType cachedType;
+     private String cachedTitle;
++    private Container delegate;
+     private final int cachedSize;
+ 
+-    public CraftContainer(InventoryView view, int id) {
++    public CraftContainer(InventoryView view, EntityHuman player, int id) {
+         this.view = view;
+         this.windowId = id;
+         // TODO: Do we need to check that it really is a CraftInventory?
+         IInventory top = ((CraftInventory)view.getTopInventory()).getInventory();
+-        IInventory bottom = ((CraftInventory)view.getBottomInventory()).getInventory();
++        PlayerInventory bottom = (PlayerInventory) ((CraftInventory)view.getBottomInventory()).getInventory();
+         cachedType = view.getType();
+         cachedTitle = view.getTitle();
+         cachedSize = getSize();
+-        setupSlots(top, bottom);
++        setupSlots(top, bottom, player);
+     }
+ 
+-    public CraftContainer(final Inventory inventory, final HumanEntity player, int id) {
++    public CraftContainer(final Inventory inventory, final EntityHuman player, int id) {
+         this(new InventoryView() {
+             @Override
+             public Inventory getTopInventory() {
+@@ -40,19 +35,19 @@ public class CraftContainer extends Container {
+ 
+             @Override
+             public Inventory getBottomInventory() {
+-                return player.getInventory();
++                return getPlayer().getInventory();
+             }
+ 
+             @Override
+             public HumanEntity getPlayer() {
+-                return player;
++                return player.getBukkitEntity();
+             }
+ 
+             @Override
+             public InventoryType getType() {
+                 return inventory.getType();
+             }
+-        }, id);
++        }, player, id);
+     }
+ 
+     @Override
+@@ -79,11 +74,11 @@ public class CraftContainer extends Container {
+             CraftPlayer player = (CraftPlayer) view.getPlayer();
+             String type = getNotchInventoryType(cachedType);
+             IInventory top = ((CraftInventory)view.getTopInventory()).getInventory();
+-            IInventory bottom = ((CraftInventory)view.getBottomInventory()).getInventory();
++            PlayerInventory bottom = (PlayerInventory) ((CraftInventory)view.getBottomInventory()).getInventory();
+             this.b.clear();
+             this.c.clear();
+             if (typeChanged) {
+-                setupSlots(top, bottom);
++                setupSlots(top, bottom, player.getHandle());
+             }
+             int size = getSize();
+             player.getHandle().playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.windowId, type, new ChatComponentText(cachedTitle), size));
+@@ -104,77 +99,70 @@ public class CraftContainer extends Container {
+             return "minecraft:enchanting_table";
+         case BREWING:
+             return "minecraft:brewing_stand";
++       case MERCHANT:
++            return "minecraft:merchant";
+         case BEACON:
+             return "minecraft:beacon";
+         case ANVIL:
+             return "minecraft:anvil";
+         case HOPPER:
+             return "minecraft:hopper";
++        case DROPPER:
++            return "minecraft:dropper"; // CraftHumanEntity
+         default:
+             return "minecraft:chest";
+         }
+     }
+ 
+-    private void setupSlots(IInventory top, IInventory bottom) { // horse // merchant
++    private void setupSlots(IInventory top, PlayerInventory bottom, EntityHuman entityhuman) {
+         switch(cachedType) {
+         case CREATIVE:
+             break; // TODO: This should be an error?
+         case PLAYER:
+         case CHEST:
+-            setupChest(top, bottom);
++        case ENDER_CHEST:
++            delegate = new ContainerChest(bottom, top, entityhuman);
+             break;
+         case DISPENSER:
+-            setupDispenser(top, bottom);
++        case DROPPER:
++            delegate = new ContainerDispenser(bottom, top);
+             break;
+         case FURNACE:
+-            setupFurnace(top, bottom);
++            delegate = new ContainerFurnace(bottom, top);
+             break;
+         case CRAFTING: // TODO: This should be an error?
+         case WORKBENCH:
+-            setupWorkbench(top, bottom);
++            setupWorkbench(top, bottom); // SPIGOT-3812 - manually set up slots so we can use the delegated inventory and not the automatically created one
+             break;
+-        case ENCHANTING:
+-            setupEnchanting(top, bottom);
++        case ENCHANTING: //
++            delegate = new ContainerEnchantTable(bottom, entityhuman.world, entityhuman.getChunkCoordinates());
+             break;
+-        case BREWING:
+-            setupBrewing(top, bottom);
++        case BREWING: //
++            delegate = new ContainerBrewingStand(bottom, top);
+             break;
+         // PandaSpigot start
+-        case BEACON:
+-            setupBeacon(top, bottom);
++        case MERCHANT:
++            delegate = new ContainerMerchant(bottom, null, entityhuman.world);
++        case BEACON: //
++            delegate = new ContainerBeacon(bottom, top);
+             break;
+-        case ANVIL:
+-            setupAnvil(top, bottom);
++        case ANVIL: //
++            delegate = new ContainerAnvil(bottom, entityhuman.world, entityhuman.getChunkCoordinates(), entityhuman);
+             break;
+         // PandaSpigot end
+-        case HOPPER:
+-            setupHopper(top, bottom);
++        case HOPPER: //
++            delegate = new ContainerHopper(bottom, top, entityhuman);
+             break;
+         }
+-    }
+ 
+-    private void setupChest(IInventory top, IInventory bottom) {
+-        int rows = top.getSize() / 9;
+-        int row;
+-        int col;
+-        // This code copied from ContainerChest
+-        int i = (rows - 4) * 18;
+-        for (row = 0; row < rows; ++row) {
+-            for (col = 0; col < 9; ++col) {
+-                this.a(new Slot(top, col + row * 9, 8 + col * 18, 18 + row * 18));
+-            }
++        if (delegate != null) {
++            this.b = delegate.b; // PAIL: items
++            this.c = delegate.c; // PAIL: slots
+         }
+ 
+-        for (row = 0; row < 3; ++row) {
+-            for (col = 0; col < 9; ++col) {
+-                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 103 + row * 18 + i));
+-            }
+-        }
+-
+-        for (row = 0; row < 9; ++row) {
+-            this.a(new Slot(bottom, row, 8 + row * 18, 161 + i));
++        if (cachedType == InventoryType.WORKBENCH) {
++            delegate = new ContainerWorkbench(bottom, entityhuman.world, entityhuman.getChunkCoordinates());
+         }
+-        // End copy from ContainerChest
+     }
+ 
+     private void setupWorkbench(IInventory top, IInventory bottom) {
+@@ -202,157 +190,12 @@ public class CraftContainer extends Container {
+         // End copy from ContainerWorkbench
+     }
+ 
+-    private void setupFurnace(IInventory top, IInventory bottom) {
+-        // This code copied from ContainerFurnace
+-        this.a(new Slot(top, 0, 56, 17));
+-        this.a(new Slot(top, 1, 56, 53));
+-        this.a(new Slot(top, 2, 116, 35));
+-
+-        int row;
+-        int col;
+-
+-        for (row = 0; row < 3; ++row) {
+-            for (col = 0; col < 9; ++col) {
+-                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+-            }
+-        }
+-
+-        for (row = 0; row < 9; ++row) {
+-            this.a(new Slot(bottom, row, 8 + row * 18, 142));
+-        }
+-        // End copy from ContainerFurnace
+-    }
+-
+-    private void setupDispenser(IInventory top, IInventory bottom) {
+-        // This code copied from ContainerDispenser
+-        int row;
+-        int col;
+-
+-        for (row = 0; row < 3; ++row) {
+-            for (col = 0; col < 3; ++col) {
+-                this.a(new Slot(top, col + row * 3, 62 + col * 18, 17 + row * 18));
+-            }
+-        }
+-
+-        for (row = 0; row < 3; ++row) {
+-            for (col = 0; col < 9; ++col) {
+-                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+-            }
+-        }
+-
+-        for (row = 0; row < 9; ++row) {
+-            this.a(new Slot(bottom, row, 8 + row * 18, 142));
+-        }
+-        // End copy from ContainerDispenser
+-    }
+-
+-    private void setupEnchanting(IInventory top, IInventory bottom) {
+-        // This code copied from ContainerEnchantTable
+-        // PandaSpigot start
+-        this.a(new Slot(top, 0, 15, 47));
+-        this.a(new Slot(top, 1, 35, 47));
+-        // PandaSpigot end
+-
+-        int row;
+-
+-        for (row = 0; row < 3; ++row) {
+-            for (int i1 = 0; i1 < 9; ++i1) {
+-                this.a(new Slot(bottom, i1 + row * 9 + 9, 8 + i1 * 18, 84 + row * 18));
+-            }
+-        }
+-
+-        for (row = 0; row < 9; ++row) {
+-            this.a(new Slot(bottom, row, 8 + row * 18, 142));
+-        }
+-        // End copy from ContainerEnchantTable
+-    }
+-
+-    private void setupBrewing(IInventory top, IInventory bottom) {
+-        // This code copied from ContainerBrewingStand
+-        this.a(new Slot(top, 0, 56, 46));
+-        this.a(new Slot(top, 1, 79, 53));
+-        this.a(new Slot(top, 2, 102, 46));
+-        this.a(new Slot(top, 3, 79, 17));
+-
+-        int i;
+-
+-        for (i = 0; i < 3; ++i) {
+-            for (int j = 0; j < 9; ++j) {
+-                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
+-            }
+-        }
+-
+-        for (i = 0; i < 9; ++i) {
+-            this.a(new Slot(bottom, i, 8 + i * 18, 142));
+-        }
+-        // End copy from ContainerBrewingStand
+-    }
+-
+-    // PandaSpigot start
+-    // This code copied from ContainerBeacon
+-    private void setupBeacon(IInventory top, IInventory bottom) {
+-        this.a(new Slot(top, 0, 136, 110));
+-        byte b0 = 36;
+-        short short0 = 137;
+-
+-        int i;
+-
+-        for (i = 0; i < 3; ++i) {
+-            for (int j = 0; j < 9; ++j) {
+-                this.a(new Slot(bottom, j + i * 9 + 9, b0 + j * 18, short0 + i * 18));
+-            }
+-        }
+-
+-        for (i = 0; i < 9; ++i) {
+-            this.a(new Slot(bottom, i, b0 + i * 18, 58 + short0));
+-        }
+-    }
+-
+-    // This code copied from ContainerAnvil
+-    private void setupAnvil(IInventory top, IInventory bottom) {
+-        this.a(new Slot(top, 0, 27, 47));
+-        this.a(new Slot(top, 1, 76, 47));
+-        this.a(new Slot(top, 2, 134, 47));
+-        
+-        int i;
+-
+-        for (i = 0; i < 3; ++i) {
+-            for (int j = 0; j < 9; ++j) {
+-                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
+-            }
+-        }
+-
+-        for (i = 0; i < 9; ++i) {
+-            this.a(new Slot(bottom, i, 8 + i * 18, 142));
+-        }
+-    }
+-    // PandaSpigot end
+-
+-    // playerInventory -> bottom
+-    // iinventory -> top
+-
+-    private void setupHopper(IInventory top, IInventory bottom) {
+-        // This code copied from ContainerHopper
+-        byte b0 = 51;
+-
+-        int i;
+-
+-        for (i = 0; i < top.getSize(); ++i) {
+-            this.a(new Slot(top, i, 44 + i * 18, 20));
+-        }
+-
+-        for (i = 0; i < 3; ++i) {
+-            for (int j = 0; j < 9; ++j) {
+-                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, i * 18 + b0));
+-            }
+-        }
+-
+-        for (i = 0; i < 9; ++i) {
+-            this.a(new Slot(bottom, i, 8 + i * 18, 58 + b0));
+-        }
+-        // End copy from ContainerHopper
++    @Override
++    public ItemStack b(EntityHuman entityhuman, int i) { // PAIL: shiftClick
++        return (delegate != null) ? delegate.b(entityhuman, i) : super.b(entityhuman, i);
+     }
+ 
++    @Override
+     public boolean a(EntityHuman entity) {
+         return true;
+     }
