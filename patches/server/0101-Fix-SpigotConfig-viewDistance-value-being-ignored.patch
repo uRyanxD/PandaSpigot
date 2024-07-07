@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sat, 6 Jul 2024 21:45:03 -0300
+Subject: [PATCH] Fix SpigotConfig viewDistance value being ignored
+
+TODO:
+Config 8.1?
+default distance <0?
+is used?
+
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index dfd1de256e15c800658e1ce8c76a587eeb310e9c..dc1bd23d0a0772ecd9b227c7c964633796a71d33 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -73,8 +73,10 @@ public class SpigotConfig
+ 
+         commands = new HashMap<String, Command>();
+ 
+-        version = getInt( "config-version", 8 );
+-        set( "config-version", 8 );
++        // PandaSpigot start
++        version = getInt( "config-version", 9 );
++        set( "config-version", 9 );
++        // PandaSpigot end
+         readConfig( SpigotConfig.class, null );
+     }
+ 
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 8e86212aa5deae00c55cacc7207525df67a1868e..179b8ac4bd9ecc847128bece422b6891d0730ff5 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -70,6 +70,14 @@ public class SpigotWorldConfig
+         return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
+     }
+ 
++    // PandaSpigot end
++    private Object get(String path, Object def)
++    {
++        config.addDefault( "world-settings.default." + path, def );
++        return config.get( "world-settings." + worldName + "." + path, config.get( "world-settings.default." + path ) );
++   }
++   // PandaSpigot end
++
+     public int chunksPerTick;
+     public boolean clearChunksOnTick;
+     private void chunksPerTick()
+@@ -131,7 +139,15 @@ public class SpigotWorldConfig
+     public int viewDistance;
+     private void viewDistance()
+     {
+-        viewDistance = getInt( "view-distance", Bukkit.getViewDistance() );
++        // PandaSpigot start
++        if (SpigotConfig.version < 9) {
++            set( "view-distance", "default" );
++        }
++        Object viewDistanceObject = get("view-distance", "default");
++        int viewDistance = viewDistanceObject instanceof Integer ? (Integer) viewDistanceObject : Bukkit.getViewDistance();
++
++        viewDistance = Math.max( Math.min(viewDistance, 32), 3);
++        // PandaSpigot end
+         log( "View Distance: " + viewDistance );
+     }
+ 
