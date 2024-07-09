@@ -8,30 +8,6 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java 
 index 1dbc588e72111afebbcfc3b1d714b7f24d6d42fe..cbfe7e1a13fea65c01aef00eee90e1f5f9b8c32d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
-@@ -115,7 +115,7 @@ public class CraftContainer extends Container {
-         }
-     }
- 
--    private void setupSlots(IInventory top, IInventory bottom) {
-+    private void setupSlots(IInventory top, IInventory bottom) { // horse // merchant
-         switch(cachedType) {
-         case CREATIVE:
-             break; // TODO: This should be an error?
-@@ -139,6 +139,14 @@ public class CraftContainer extends Container {
-         case BREWING:
-             setupBrewing(top, bottom);
-             break;
-+        // PandaSpigot start
-+        case BEACON:
-+            setupBeacon(top, bottom);
-+            break;
-+        case ANVIL:
-+            setupAnvil(top, bottom);
-+            break;
-+        // PandaSpigot end
-         case HOPPER:
-             setupHopper(top, bottom);
-             break;
 @@ -163,8 +171,8 @@ public class CraftContainer extends Container {
              }
          }
@@ -95,63 +71,3 @@ index 1dbc588e72111afebbcfc3b1d714b7f24d6d42fe..cbfe7e1a13fea65c01aef00eee90e1f5
          // End copy from ContainerDispenser
      }
  
-     private void setupEnchanting(IInventory top, IInventory bottom) {
-         // This code copied from ContainerEnchantTable
--        this.a((new Slot(top, 0, 25, 47)));
-+        // PandaSpigot start
-+        this.a(new Slot(top, 0, 15, 47));
-+        this.a(new Slot(top, 1, 35, 47));
-+        // PandaSpigot end
- 
-         int row;
- 
-@@ -277,6 +288,49 @@ public class CraftContainer extends Container {
-         // End copy from ContainerBrewingStand
-     }
- 
-+    // PandaSpigot start
-+    // This code copied from ContainerBeacon
-+    private void setupBeacon(IInventory top, IInventory bottom) {
-+        this.a(new Slot(top, 0, 136, 110));
-+        byte b0 = 36;
-+        short short0 = 137;
-+
-+        int i;
-+
-+        for (i = 0; i < 3; ++i) {
-+            for (int j = 0; j < 9; ++j) {
-+                this.a(new Slot(bottom, j + i * 9 + 9, b0 + j * 18, short0 + i * 18));
-+            }
-+        }
-+
-+        for (i = 0; i < 9; ++i) {
-+            this.a(new Slot(bottom, i, b0 + i * 18, 58 + short0));
-+        }
-+    }
-+
-+    // This code copied from ContainerAnvil
-+    private void setupAnvil(IInventory top, IInventory bottom) {
-+        this.a(new Slot(top, 0, 27, 47));
-+        this.a(new Slot(top, 1, 76, 47));
-+        this.a(new Slot(top, 2, 134, 47));
-+        
-+        int i;
-+
-+        for (i = 0; i < 3; ++i) {
-+            for (int j = 0; j < 9; ++j) {
-+                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
-+            }
-+        }
-+
-+        for (i = 0; i < 9; ++i) {
-+            this.a(new Slot(bottom, i, 8 + i * 18, 142));
-+        }
-+    }
-+    // PandaSpigot end
-+
-+    // playerInventory -> bottom
-+    // iinventory -> top
-+
-     private void setupHopper(IInventory top, IInventory bottom) {
-         // This code copied from ContainerHopper
-         byte b0 = 51;
