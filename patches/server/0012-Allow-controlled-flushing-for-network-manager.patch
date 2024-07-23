@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Tue, 23 Jul 2024 18:13:44 -0300
+Subject: [PATCH] Allow controlled flushing for network manager
+
+
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 33c98f2cdf518e5225ce5fef0de23559ec8dc3fd..699012baba5c5bca818592fe27b3f8553422a02e 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -78,6 +78,36 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+     public boolean isPending = true;
+     public boolean queueImmunity = false;
+     public EnumProtocol protocol;
++    volatile boolean canFlush = true;
++    private final java.util.concurrent.atomic.AtomicInteger packetWrites = new java.util.concurrent.atomic.AtomicInteger();
++    private int flushPacketsStart;
++    private final Object flushLock = new Object();
++
++    public void disableAutomaticFlush() {
++        synchronized (this.flushLock) {
++            this.flushPacketsStart = this.packetWrites.get();
++            this.canFlush = false;
++        }
++    }
++
++    public void enableAutomaticFlush() {
++        synchronized (this.flushLock) {
++            this.canFlush = true;
++            if (this.packetWrites.get() != this.flushPacketsStart) {
++                this.flush();
++            }
++        }
++    }
++
++    private final void flush() {
++        if (this.channel.eventLoop().inEventLoop()) {
++            this.channel.flush();
++        } else { // TODO: check
++            this.channel.eventLoop().execute(() -> {
++                this.channel.flush();
++            });
++        }
++    }
+ 
+     public NetworkManager(EnumProtocolDirection enumprotocoldirection) {
+         this.h = enumprotocoldirection;
+@@ -192,7 +222,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+             MinecraftServer.getServer().isMainThread() && packet.isReady() && this.i.isEmpty() &&
+                 (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
+             ))) {
+-            this.a(packet, (GenericFutureListener[]) ArrayUtils.add(agenericfuturelistener, 0, genericfuturelistener)); // TODO: check
++            this.writePacket(packet, (GenericFutureListener[]) ArrayUtils.add(agenericfuturelistener, 0, genericfuturelistener), null); // TODO: check
+             return;
+         }
+         java.util.List<Packet> extraPackets = InnerUtil.buildExtraPackets(packet);
+@@ -216,6 +246,12 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+ 
+     // TODO: dispatchPacket?
+     private void a(final Packet packet, final GenericFutureListener<? extends Future<? super Void>>[] agenericfuturelistener) {
++        this.writePacket(packet, agenericfuturelistener, Boolean.TRUE);
++    }
++    private void writePacket(final Packet packet, final GenericFutureListener<? extends Future<? super Void>>[] agenericfuturelistener, Boolean flushConditional) {
++        this.packetWrites.getAndIncrement();
++        boolean effectiveFlush = flushConditional == null ? this.canFlush : flushConditional;
++        final boolean flush = effectiveFlush || packet instanceof PacketPlayOutKeepAlive || packet instanceof PacketPlayOutKickDisconnect;
+         final EnumProtocol enumprotocol = EnumProtocol.a(packet);
+         final EnumProtocol enumprotocol1 = (EnumProtocol) this.channel.attr(NetworkManager.c).get();
+ 
+@@ -236,7 +272,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+             }
+             try {
+ 
+-            ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
++            ChannelFuture channelfuture = (flush) ? this.channel.writeAndFlush(packet) : this.channel.write(packet);
+ 
+             if (agenericfuturelistener != null) {
+                 channelfuture.addListeners(agenericfuturelistener);
+@@ -264,7 +300,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+                     }
+                     try {
+ 
+-                    ChannelFuture channelfuture = NetworkManager.this.channel.writeAndFlush(packet);
++                    ChannelFuture channelfuture = (flush) ? NetworkManager.this.channel.writeAndFlush(packet) : NetworkManager.this.channel.write(packet);
+ 
+                     if (agenericfuturelistener != null) {
+                         channelfuture.addListeners(agenericfuturelistener);
+@@ -302,20 +338,26 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+ 
+     private boolean processQueue() {
+         if (this.i.isEmpty()) return true;
++        final boolean needsFlush = this.canFlush;
++        boolean hasWrotePacket = false;
+         java.util.Iterator<QueuedPacket> iterator = this.i.iterator();
+         while (iterator.hasNext()) {
+             NetworkManager.QueuedPacket queued = iterator.next();
+ 
+-            if (queued == null) {
++            if (false && queued == null) {
+                 return true;
+             }
+ 
+             Packet packet = queued.getPacket();
+             if (!packet.isReady()) {
++                if (hasWrotePacket && (needsFlush || this.canFlush)) {
++                    this.flush();
++                }
+                 return false;
+             } else {
+                 iterator.remove();
+-                this.a(packet, queued.getAGenericFutureListeners());
++                this.writePacket(packet, queued.getAGenericFutureListeners(), (!iterator.hasNext() && (needsFlush || this.canFlush)) ? Boolean.TRUE : Boolean.FALSE);
++                hasWrotePacket = true;
+             }
+         }
+         return true;

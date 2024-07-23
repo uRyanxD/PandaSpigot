@@ -1,22 +1,20 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: hpfxd <me@hpfxd.com>
-Date: Fri, 29 Oct 2021 08:08:48 -0400
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Tue, 23 Jul 2024 18:26:47 -0300
 Subject: [PATCH] Consolidate flush calls for entity tracker packets
 
-Most server packets seem to be sent from here, so try to avoid expensive flush calls from them.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index eae936650fddd5ef418ee2ddd680d36e82045365..06e023994050a07d2efed174b1fbd8f1eddcd231 100644
+index eae936650fddd5ef418ee2ddd680d36e82045365..3f28e9d6b40f57fe29be0b1b172ed44fbb02fad7 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -963,7 +963,26 @@ public abstract class MinecraftServer extends com.hpfxd.pandaspigot.tickloop.Ree
+@@ -963,7 +963,22 @@ public abstract class MinecraftServer extends com.hpfxd.pandaspigot.tickloop.Ree
                  this.methodProfiler.b();
                  this.methodProfiler.a("tracker");
                  worldserver.timings.tracker.startTiming(); // Spigot
-+                // PandaSpigot start - controlled flush for entity tracker packets
 +                List<NetworkManager> disabledFlushes = new ArrayList<>(worldserver.players.size());
 +                for (EntityHuman player : worldserver.players) {
-+                    if (!(player instanceof EntityPlayer)) continue; // skip non-player entities
++                    if (!(player instanceof EntityPlayer)) continue;
 +                    PlayerConnection connection = ((EntityPlayer) player).playerConnection;
 +                    if (connection != null) {
 +                        connection.networkManager.disableAutomaticFlush();
@@ -24,15 +22,12 @@ index eae936650fddd5ef418ee2ddd680d36e82045365..06e023994050a07d2efed174b1fbd8f1
 +                    }
 +                }
 +                try {
-+                // PandaSpigot end
                  worldserver.getTracker().updatePlayers();
-+                // PandaSpigot start - controlled flush for entity tracker packets
 +                } finally {
 +                    for (NetworkManager networkManager : disabledFlushes) {
 +                        networkManager.enableAutomaticFlush();
 +                    }
 +                }
-+                // PandaSpigot end
                  worldserver.timings.tracker.stopTiming(); // Spigot
                  this.methodProfiler.b();
                  this.methodProfiler.b();
