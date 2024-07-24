@@ -5,59 +5,74 @@ Subject: [PATCH] Optimise non-flush packet sending
 
 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 699012baba5c5bca818592fe27b3f8553422a02e..e34b195420f6d2075b4449f1587c2d6e28fdd525 100644
+index 699012baba5c5bca818592fe27b3f8553422a02e..c6b5cabafd7b4343718b6d80b24183185018d4b0 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
-@@ -288,8 +288,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+@@ -262,6 +262,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+ 
+         EntityPlayer player = getPlayer();
+         if (this.channel.eventLoop().inEventLoop()) {
++            /*
+             if (enumprotocol != enumprotocol1) {
+                 this.a(enumprotocol);
+             }
+@@ -287,8 +288,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+                 close(new ChatMessage("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
                  packet.onPacketDispatchFinish(player, null);
              }
++             */
++            this.doPacketSend(packet, agenericfuturelistener, enumprotocol, enumprotocol1, flush);
          } else {
 -            this.channel.eventLoop().execute(new Runnable() {
--                public void run() {
-+            Runnable choice1 = null;
-+            io.netty.util.concurrent.AbstractEventExecutor.LazyRunnable choice2 = null;
-+            if (flush) {
-+                choice1 = () -> {
++            /*this.channel.eventLoop().execute(new Runnable() {
+                 public void run() {
                      if (enumprotocol != enumprotocol1) {
                          NetworkManager.this.a(enumprotocol);
-                     }
-@@ -315,8 +317,37 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
-                         close(new ChatMessage("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
+@@ -316,9 +319,46 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
                          packet.onPacketDispatchFinish(player, null);
                      }
--                }
+                 }
 -            });
++            });*/
++            if (!flush) {
++                io.netty.util.concurrent.AbstractEventExecutor.LazyRunnable run = () -> {
++                    this.doPacketSend(packet, agenericfuturelistener, enumprotocol, enumprotocol1, flush);
 +                };
++                this.channel.eventLoop().execute(run);
 +            } else {
-+                choice2 = () -> {
-+                    if (enumprotocol != enumprotocol1) {
-+                        NetworkManager.this.a(enumprotocol);
-+                    }
-+
-+                    if (!isConnected()) {
-+                        packet.onPacketDispatchFinish(player, null);
-+                        return;
-+                    }
-+                    try {
-+
-+                        ChannelFuture channelfuture = (flush) ? NetworkManager.this.channel.writeAndFlush(packet) : NetworkManager.this.channel.write(packet);
-+
-+                        if (agenericfuturelistener != null) {
-+                            channelfuture.addListeners(agenericfuturelistener);
-+                        }
-+                        if (packet.hasFinishListener()) {
-+                            channelfuture.addListener((ChannelFutureListener) channelFuture -> packet.onPacketDispatchFinish(player, channelFuture));
-+                        }
-+
-+                        channelfuture.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-+                    } catch (Exception e) {
-+                        g.error("NetworkException: " + player, e);
-+                        close(new ChatMessage("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
-+                        packet.onPacketDispatchFinish(player, null);
-+                    }
-+                };
++                this.channel.eventLoop().execute(() -> {
++                    this.doPacketSend(packet, agenericfuturelistener, enumprotocol, enumprotocol1, flush);
++                });
 +            }
-+            this.channel.eventLoop().execute(choice1 != null ? choice1 : choice2);
++        }
++    }
++
++    private void doPacketSend(Packet packet, final GenericFutureListener<? extends Future<? super Void>>[] agenericfuturelistener, EnumProtocol enumprotocol, EnumProtocol enumprotocol1, boolean flush) {
++        if (enumprotocol != enumprotocol1) {
++            this.a(enumprotocol);
++        }
++
++        EntityPlayer player = getPlayer();
++        if (!isConnected()) {
++            packet.onPacketDispatchFinish(player, null);
++            return;
          }
++        try {
++            ChannelFuture channelfuture = (flush) ? this.channel.writeAndFlush(packet) : this.channel.write(packet);
  
++            if (agenericfuturelistener != null) {
++                channelfuture.addListeners(agenericfuturelistener);
++            }
++            if (packet.hasFinishListener()) {
++                channelfuture.addListener((ChannelFutureListener) channelFuture -> packet.onPacketDispatchFinish(player, channelFuture));
++            }
++
++            channelfuture.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
++        } catch (Exception e) {
++            g.error("NetworkException: " + player, e);
++            close(new ChatMessage("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
++            packet.onPacketDispatchFinish(player, null);
++        }
      }
+ 
+     private boolean sendPacketQueue() { return this.m(); }
