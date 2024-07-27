@@ -173,11 +173,13 @@ index 083f088a562394f3425db0ae6ee5ce074833f1e8..33c98f2cdf518e5225ce5fef0de23559
 +            // PandaSpigot end
  
              channelfuture.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
++            // PandaSpigot start
 +            } catch (Exception e) {
 +                g.error("NetworkException: " + player, e);
-+                close(new ChatMessage("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
++                close(new ChatMessage("disconnect.genericReason", "Internal Exception: " + e.getMessage()));;
 +                packet.onPacketDispatchFinish(player, null);
 +            }
++            // PandaSpigot end
          } else {
              this.channel.eventLoop().execute(new Runnable() {
                  public void run() {
