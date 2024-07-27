@@ -166,9 +166,11 @@ index 083f088a562394f3425db0ae6ee5ce074833f1e8..33c98f2cdf518e5225ce5fef0de23559
              if (agenericfuturelistener != null) {
                  channelfuture.addListeners(agenericfuturelistener);
              }
++            // PandaSpigot start
 +            if (packet.hasFinishListener()) {
 +                channelfuture.addListener((ChannelFutureListener) channelFuture -> packet.onPacketDispatchFinish(player, channelFuture));
 +            }
++            // PandaSpigot end
  
              channelfuture.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
 +            } catch (Exception e) {
