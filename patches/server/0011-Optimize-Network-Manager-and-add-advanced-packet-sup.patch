@@ -147,17 +147,19 @@ index 083f088a562394f3425db0ae6ee5ce074833f1e8..33c98f2cdf518e5225ce5fef0de23559
              this.channel.config().setAutoRead(false);
          }
  
-+        EntityPlayer player = getPlayer();
++        EntityPlayer player = getPlayer(); // PandaSpigot
          if (this.channel.eventLoop().inEventLoop()) {
              if (enumprotocol != enumprotocol1) {
                  this.a(enumprotocol);
              }
- 
+
++            // PandaSpigot start 
 +            if (!isConnected()) {
 +                packet.onPacketDispatchFinish(player, null);
 +                return;
 +            }
 +            try {
++            // PandaSpigot end
 +
              ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
  
