@@ -291,17 +291,6 @@ index 083f088a562394f3425db0ae6ee5ce074833f1e8..33c98f2cdf518e5225ce5fef0de23559
  
          }
      }
-@@ -328,8 +436,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
- 
-     static class QueuedPacket {
- 
--        private final Packet a;
--        private final GenericFutureListener<? extends Future<? super Void>>[] b;
-+        private final Packet a; private final Packet getPacket() { return this.a; }
-+        private final GenericFutureListener<? extends Future<? super Void>>[] b; private final GenericFutureListener<? extends Future<? super Void>>[] getAGenericFutureListeners() { return this.b; }
- 
-         public QueuedPacket(Packet packet, GenericFutureListener<? extends Future<? super Void>>... agenericfuturelistener) {
-             this.a = packet;
 diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
 index fdc142b75b78289f01a9e9fed6f36432624735db..152a6b3fef71d26206ed88369511cba29b4af4db 100644
 --- a/src/main/java/net/minecraft/server/Packet.java
