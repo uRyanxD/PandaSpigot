@@ -4,6 +4,10 @@ Date: Tue, 23 Jul 2024 17:18:13 -0300
 Subject: [PATCH] Optimize Network Manager and add advanced packet support
 
 
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 083f088a562394f3425db0ae6ee5ce074833f1e8..33c98f2cdf518e5225ce5fef0de23559ec8dc3fd 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -75,6 +75,9 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
      private boolean o;
      private boolean p;
