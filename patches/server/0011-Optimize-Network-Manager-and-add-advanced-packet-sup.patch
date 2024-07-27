@@ -276,27 +276,6 @@ index 083f088a562394f3425db0ae6ee5ce074833f1e8..33c98f2cdf518e5225ce5fef0de23559
 +        i.clear();
 +    }
 +
-     public void close(IChatBaseComponent ichatbasecomponent) {
-         // Spigot Start
-         this.preparing = false;
-+        clearPacketQueue();
-         // Spigot End
-         if (this.channel.isOpen()) {
-             this.channel.close(); // We can't wait as this may be called from an event loop.
-@@ -314,10 +422,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
-                 } else if (this.getPacketListener() != null) {
-                     this.getPacketListener().a(new ChatComponentText("Disconnected"));
-                 }
--                this.i.clear(); // Free up packet queue.
--            } else {
-+                clearPacketQueue();
-+            } /*else {
-                 NetworkManager.g.warn("handleDisconnection() called twice");
--            }
-+            }*/
- 
-         }
-     }
 diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
 index fdc142b75b78289f01a9e9fed6f36432624735db..152a6b3fef71d26206ed88369511cba29b4af4db 100644
 --- a/src/main/java/net/minecraft/server/Packet.java
