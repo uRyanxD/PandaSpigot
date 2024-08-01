@@ -18,9 +18,18 @@ index cb72b36725927272fddfdad929b268a7b06140ac..c0d93ad78f9a83e9b69eea9120a3bcda
  
      public void track(Entity entity) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 696edfe83aa6c75deaaa59cc10818dbf261cc5a9..3a260502ea61ef3c7b582abfffc8e6c15787ca1a 100644
+index 696edfe83aa6c75deaaa59cc10818dbf261cc5a9..21279fb546b91cde9235035ac25ec0ece7e7d8d9 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -15,7 +15,7 @@ import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
+ import java.util.HashMap;
+ // CraftBukkit end
+ 
+-public class PlayerChunkMap {
++public class PlayerChunkMap {//a
+ 
+     private static final Logger a = LogManager.getLogger();
+     private final WorldServer world;
 @@ -28,9 +28,9 @@ public class PlayerChunkMap {
      private final int[][] i = new int[][] { { 1, 0}, { 0, 1}, { -1, 0}, { 0, -1}};
      private boolean wasNotEmpty; // CraftBukkit - add field
@@ -34,7 +43,7 @@ index 696edfe83aa6c75deaaa59cc10818dbf261cc5a9..3a260502ea61ef3c7b582abfffc8e6c1
  
      public WorldServer a() {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index ada9cf25b091c2df24301bb5e82d1f76fbd929e5..8b2add4fcf078c225fc409a706519ca8ef65b1df 100644
+index ada9cf25b091c2df24301bb5e82d1f76fbd929e5..9330b49ec75424e1964eb4ecfeddf9583f073c01 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -58,7 +58,7 @@ public abstract class PlayerList {
@@ -42,39 +51,54 @@ index ada9cf25b091c2df24301bb5e82d1f76fbd929e5..8b2add4fcf078c225fc409a706519ca8
      private boolean hasWhitelist;
      protected int maxPlayers;
 -    private int r;
-+    private int r; // viewDistance;
++    private int viewDistance; // Panda
      private WorldSettings.EnumGamemode s;
      private boolean t;
      private int u;
-@@ -272,7 +272,7 @@ public abstract class PlayerList {
+@@ -272,8 +272,8 @@ public abstract class PlayerList {
          worldserver1.chunkProviderServer.getChunkAt((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
      }
  
 -    public int d() {
-+    public int d() { // getEntityViewDistance
-         return PlayerChunkMap.getFurthestViewableBlock(this.s());
+-        return PlayerChunkMap.getFurthestViewableBlock(this.s());
++    public int getEntityViewDistance() {
++        return PlayerChunkMap.getFurthestViewableBlock(this.getViewDistance());
      }
  
-@@ -1171,7 +1171,7 @@ public abstract class PlayerList {
+     public NBTTagCompound a(EntityPlayer entityplayer) {
+@@ -1171,8 +1171,8 @@ public abstract class PlayerList {
          return arraylist;
      }
  
 -    public int s() {
-+    public int s() { // getViewDistance -- PlayerChunkMap patch
-         return this.r;
+-        return this.r;
++    public int getViewDistance() {
++        return this.viewDistance;
      }
  
-@@ -1245,7 +1245,7 @@ public abstract class PlayerList {
+     public MinecraftServer getServer() {
+@@ -1245,8 +1245,8 @@ public abstract class PlayerList {
          return serverstatisticmanager;
      }
  
 -    public void a(int i) {
-+    public void a(int i) { // setViewDistance
-         this.r = i;
+-        this.r = i;
++    public void setViewDistance(int i) {
++        this.viewDistance = i;
          if (this.server.worldServer != null) {
              WorldServer[] aworldserver = this.server.worldServer;
+             int j = aworldserver.length;
+@@ -1257,7 +1257,7 @@ public abstract class PlayerList {
+                 // CraftBukkit end
+ 
+                 if (worldserver != null) {
+-                    worldserver.getPlayerChunkMap().a(i);
++                    worldserver.getPlayerChunkMap().a(i); // setPlayerViewDistance
+                 }
+             }
+ 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 47af49c25e1ce57a93aa4797f833ef8381fab523..eb1b5de9341915c5c627f5d462ac849c51beab20 100644
+index 47af49c25e1ce57a93aa4797f833ef8381fab523..8014889d5c06ab1c6ae00a363a8e3caa0561b4f5 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -64,7 +64,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -86,3 +110,12 @@ index 47af49c25e1ce57a93aa4797f833ef8381fab523..eb1b5de9341915c5c627f5d462ac849c
          this.worldProvider.a(this);
          this.chunkProvider = this.k();
          this.Q = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit // Paper - configurable search radius // PandaSpigot - Just define the variable directly
+@@ -1178,7 +1178,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+     }
+ 
+     protected int q() {
+-        return this.server.getPlayerList().s();
++        return this.server.getPlayerList().getViewDistance();
+     }
+ 
+     public MinecraftServer getMinecraftServer() {

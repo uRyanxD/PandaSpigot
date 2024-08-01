@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sun, 7 Jul 2024 00:02:43 -0300
+Subject: [PATCH] aaa
+
+
+diff --git a/src/main/java/net/minecraft/server/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/DedicatedPlayerList.java
+index 75dc45f2e5fe59333b0e11d50209b1d1cb4ce947..da23f279599481ca70fdf1926e02fb4f2f81205b 100644
+--- a/src/main/java/net/minecraft/server/DedicatedPlayerList.java
++++ b/src/main/java/net/minecraft/server/DedicatedPlayerList.java
+@@ -9,9 +9,9 @@ public class DedicatedPlayerList extends PlayerList {
+ 
+     private static final Logger f = LogManager.getLogger();
+ 
+-    public DedicatedPlayerList(DedicatedServer dedicatedserver) {
++    public DedicatedPlayerList(DedicatedServer dedicatedserver) {a
+         super(dedicatedserver);
+-        this.a(dedicatedserver.a("view-distance", 10));
++        this.a(dedicatedserver.a("view-distance", 10)); // setViewDistance(dedicatedserver.getInt())
+         this.maxPlayers = dedicatedserver.a("max-players", 20);
+         this.setHasWhitelist(dedicatedserver.a("white-list", false));
+         if (!dedicatedserver.T()) {
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 9330b49ec75424e1964eb4ecfeddf9583f073c01..4b3baaa99c522906b0791f941a925139f2f6ec53 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -39,7 +39,7 @@ import org.bukkit.util.Vector;
+ import org.spigotmc.event.player.PlayerSpawnLocationEvent;
+ // CraftBukkit end
+ 
+-public abstract class PlayerList {
++public abstract class PlayerList {a
+ 
+     public static final File a = new File("banned-players.json");
+     public static final File b = new File("banned-ips.json");
+diff --git a/src/main/java/net/minecraft/server/PropertyManager.java b/src/main/java/net/minecraft/server/PropertyManager.java
+index 0ee7fe8a6626c0d8b3215b59a6f058dcc06be4d8..0027aa8f24466de3ea79438cb4789d0e1ae0de0f 100644
+--- a/src/main/java/net/minecraft/server/PropertyManager.java
++++ b/src/main/java/net/minecraft/server/PropertyManager.java
+@@ -109,7 +109,7 @@ public class PropertyManager {
+         return getOverride(s, this.properties.getProperty(s, s1)); // CraftBukkit
+     }
+ 
+-    public int getInt(String s, int i) {
++    public int getInt(String s, int i) {//
+         try {
+             return getOverride(s, Integer.parseInt(this.getString(s, "" + i))); // CraftBukkit
+         } catch (Exception exception) {
