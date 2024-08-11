@@ -1,26 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Spottedleaf <spottedleaf@spottedleaf.dev>
-Date: Fri, 29 Oct 2021 08:25:50 -0400
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sun, 11 Aug 2024 14:43:47 -0300
 Subject: [PATCH] Optimise non-flush packet sending
 
-Places like entity tracking make heavy use of packet sending,
-and internally netty will use some very expensive thread wakeup
-calls when scheduling.
-
-Thanks to various hacks in ProtocolLib as well as other
-plugins, we cannot simply use a queue of packets to group
-send on execute. We have to call execute for each packet.
-
-Tux's suggestion here is exactly what was needed - tag
-the Runnable indicating it should not make a wakeup call.
-
-Big thanks to Tux for making this possible as I had given
-up on this optimisation before he came along.
-
-Locally this patch drops the entity tracker tick by a full 1.5x.
 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index f067e2b80f328b13712d6a64db2aec4afa6c8970..bd0149bd081a71f9b87a18a97abe82e8c7994bad 100644
+index da43a6b114ae3af98d4cf98f3a55ce187894c7f9..d69379ce765d5dda640a575b82b1100b58b27b5a 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -305,8 +305,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
@@ -33,21 +18,20 @@ index f067e2b80f328b13712d6a64db2aec4afa6c8970..bd0149bd081a71f9b87a18a97abe82e8
                      if (enumprotocol != enumprotocol1) {
                          NetworkManager.this.a(enumprotocol);
                      }
-@@ -337,8 +336,15 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
-                     packet.onPacketDispatchFinish(player, null);
-                 }
-                 // PandaSpigot end
+@@ -337,8 +336,14 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+                         packet.onPacketDispatchFinish(player, null);
+                     }
+                     // PandaSpigot end
 -                }
 -            });
++            // PandaSpigot start
 +            };
-+            // PandaSpigot start - optimise packets that are not flushed
 +            if (!flush) {
 +                io.netty.util.concurrent.AbstractEventExecutor.LazyRunnable run = command::run;
 +                this.channel.eventLoop().execute(run);
-+           } else {
++            } else {
 +                this.channel.eventLoop().execute(command);
-+           }
-+            // PandaSpigot end
++            }
          }
  
      }
