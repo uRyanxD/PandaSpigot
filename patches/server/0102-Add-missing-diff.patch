@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Tue, 27 Aug 2024 16:32:51 -0300
+Subject: [PATCH] Add missing diff
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 44f0d93d1d95b334c70056e634a1286c371a1ec8..3193cd4726f56ce053e1900bf3a1c7a1915d6717 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1707,6 +1707,11 @@ public abstract class World implements IBlockAccess {
+                     }
+ 
+                     this.notify(tileentity1.getPosition());
++                    // PandaSpigot start - Add missing diff
++                    if (!this.tileEntityList.contains(tileentity1)) { // this.h -> this.tileEntityList
++                        this.a(tileentity1);
++                    }
++                    // PandaSpigot end
+                 }
+             }
+ 
