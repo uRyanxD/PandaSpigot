@@ -81,7 +81,7 @@ if [ ! -d "$spigotdecompiledir/net/minecraft/server" ]; then
     set +e
     java -jar "$workdir/Paper/BuildData/bin/fernflower.jar" -dgs=1 -hdc=0 -rbr=0 -asc=1 -udv=0 "$classdir" "$spigotdecompiledir"
     if [ "$?" != "0" ]; then
-        rm -rf "$spigotdecompiledir/net"
+        rm -rf "$spigotdecompiledir/net/minecraft/server"
         echo "Failed to decompile classes."
         exit 1
     fi
