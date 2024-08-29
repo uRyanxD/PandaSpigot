@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Tue, 27 Aug 2024 16:32:51 -0300
+Subject: [PATCH] Fix CB mistakes
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 44f0d93d1d95b334c70056e634a1286c371a1ec8..4ac43d0efa6d98567f783bbb6bf8257880e166ad 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -469,7 +469,7 @@ public abstract class World implements IBlockAccess {
+ 
+     // CraftBukkit start - Split off from original setTypeAndData(int i, int j, int k, Block block, int l, int i1) method in order to directly send client and physic updates
+     public void notifyAndUpdatePhysics(BlockPosition blockposition, Chunk chunk, Block oldBlock, Block newBLock, int flag) {
+-        if ((flag & 2) != 0 && (chunk == null || chunk.isReady())) {  // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++        if ((flag & 2) != 0 && (!this.isClientSide || (flag & 4) == 0) && (chunk == null || chunk.isReady())) {  // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement // PandaSpigot - Add missing checks
+             this.notify(blockposition);
+         }
+ 
+@@ -1707,6 +1707,11 @@ public abstract class World implements IBlockAccess {
+                     }
+ 
+                     this.notify(tileentity1.getPosition());
++                    // PandaSpigot start - Add missing diff
++                    if (!this.tileEntityList.contains(tileentity1)) { // this.h -> this.tileEntityList
++                        this.a(tileentity1);
++                    }
++                    // PandaSpigot end
+                 }
+             }
+ 
