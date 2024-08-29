@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Thu, 29 Aug 2024 15:58:20 -0300
+Subject: [PATCH] Add PandaSpigot config to timings
+
+TODO: PandaSpigot configuration must be fixed first
+
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index fe19ea003eedfe21c6400d83430d87ddba8f5f6e..b023dc52629621a5298ce27a3cdf218c69d6c8e3 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -202,7 +202,10 @@ class TimingsExport extends Thread {
+         parent.put("config", createObject(
+             pair("spigot", mapAsJSON(Bukkit.spigot().getSpigotConfig(), null)),
+             pair("bukkit", mapAsJSON(Bukkit.spigot().getBukkitConfig(), null)),
+-            pair("paperspigot", mapAsJSON(Bukkit.spigot().getPaperSpigotConfig(), null))
++            // PandaSpigot start - Add PandaSpigot config to timings
++            pair("paperspigot", mapAsJSON(Bukkit.spigot().getPaperSpigotConfig(), null)),
++            pair("pandaspigot", mapAsJSON(Bukkit.spigot().getPandaSpigotConfig(), null))
++            // PandaSpigot end
+         ));
+ 
+         new TimingsExport(sender, parent, history).start();
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 1ad82f5eddb477d2d9a753c1d2540ccff3d4f392..45ef6c7da7e10cf6fd742fd02eeafb5da7e45176 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1013,6 +1013,13 @@ public interface Server extends PluginMessageRecipient {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+ 
++        // PandaSpigot start - Add PandaSpigot config to timings
++        public org.bukkit.configuration.file.YamlConfiguration getPandaSpigotConfig()
++        {
++            throw new UnsupportedOperationException("Not supported yet.");
++        }
++        // PandaSpigot end
++
+         /**
+          * Sends the component to the player
+          *
