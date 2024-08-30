@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mechoriet <kevinworm92@gmail.com>
+Date: Sun, 4 Dec 2022 12:29:12 +0100
+Subject: [PATCH] Avoid looking up for the same chunk twice
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 684ac4c38abc390f26209f4751c3055283485c94..f1915f4f22b66307316f8fc1652140bfeb3ac2b1 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -78,9 +78,11 @@ public class ChunkProviderServer implements IChunkProvider {
+                 // CraftBukkit start
+                 this.unloadQueue.add(i, j);
+ 
+-                Chunk c = chunks.get(LongHash.toLong(i, j));
+-                if (c != null) {
+-                    c.mustSave = true;
++                // PandaSpigot start - Reuse the variable
++                // Chunk c = chunks.get(LongHash.toLong(i, j));
++                if (chunk != null) {
++                    chunk.mustSave = true;
++                // PandaSpigot end
+                 }
+                 // CraftBukkit end
+             }
+@@ -88,9 +90,11 @@ public class ChunkProviderServer implements IChunkProvider {
+             // CraftBukkit start
+             this.unloadQueue.add(i, j);
+ 
+-            Chunk c = chunks.get(LongHash.toLong(i, j));
+-            if (c != null) {
+-                c.mustSave = true;
++            // PandaSpigot start - Reuse the variable
++            // Chunk c = chunks.get(LongHash.toLong(i, j));
++            if (chunk != null) {
++                chunk.mustSave = true;
++            // PandaSpigot end
+             }
+             // CraftBukkit end
+         }
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index d3767d2a8963e72253fd05b4d177acd7415158bb..6f7dc1cb348027e1f8255ad1cb94735b9d56c545 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -128,9 +128,12 @@ public class ActivationRange
+             {
+                 for ( int j1 = k; j1 <= l; ++j1 )
+                 {
+-                    if ( world.getWorld().isChunkLoaded( i1, j1 ) )
++                    // PandaSpigot start - Avoid looking up for the same chunk twice
++                    Chunk chunk = world.getChunkIfLoaded( i1, j1 );
++                    if ( chunk != null )
+                     {
+-                        activateChunkEntities( world.getChunkAt( i1, j1 ) );
++                        activateChunkEntities( chunk );
++                    // PandaSpigot end
+                     }
+                 }
+             }
