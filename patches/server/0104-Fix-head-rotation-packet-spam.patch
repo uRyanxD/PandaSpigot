@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Thu, 29 Aug 2024 21:37:52 -0300
+Subject: [PATCH] Fix head rotation packet spam
+
+This patch is from SportBukkit, I modified the check from EntityLiving to EntityPlayer
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 0b90b6f30ea09fb117281d5ddd2fc752d2c139b5..20ca9d9aa4668758c5c34139afead30bdcb5f0a9 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -411,8 +411,12 @@ public class EntityTrackerEntry {
+                     }
+ 
+                     // CraftBukkit start - Fix for nonsensical head yaw
++                    // PandaSpigot start - Fix head rotation packet spam
++                    if (this.tracker instanceof EntityPlayer) {
+                     this.i = MathHelper.d(this.tracker.getHeadRotation() * 256.0F / 360.0F);
+                     entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityHeadRotation(this.tracker, (byte) this.i)); // PandaSpigot - Don't broadcast
++                    }
++                    // PandaSpigot end
+                     // CraftBukkit end
+ 
+                     if (this.tracker instanceof EntityLiving) {
