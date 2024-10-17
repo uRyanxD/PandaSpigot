@@ -7,7 +7,7 @@ Optimizes to not repeatedly look up the same chunk for
 light lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 3971e7dfdb9b05f44c8e0735d88e95da72be9f22..9c22cf970288d24a431df836409fc8026dee2384 100644
+index 5fd4768f7221544b686dbc61cd24dbff493d02e4..a6f5fa39bd0309432b4ba1c15cc96de7e1ce0728 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -334,7 +334,7 @@ public class Chunk {
@@ -20,10 +20,10 @@ index 3971e7dfdb9b05f44c8e0735d88e95da72be9f22..9c22cf970288d24a431df836409fc802
  
              this.q = true;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index ddbc724da605b26652371f2c51ab2609a7c7ef1e..fcdc06150fec7bd5dc907b5337085be1360373eb 100644
+index 2c5afd38012061fd3b2d03c377588d930d792c82..3bb956916749730d28ed8198d34b4e4ff024c848 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -2680,9 +2680,15 @@ public abstract class World implements IBlockAccess {
+@@ -2663,9 +2663,15 @@ public abstract class World implements IBlockAccess {
       * PaperSpigot - Asynchronous lighting updates
       */
      public boolean updateLight(final EnumSkyBlock enumskyblock, final BlockPosition position) {

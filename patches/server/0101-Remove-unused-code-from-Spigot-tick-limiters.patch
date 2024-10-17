@@ -6,7 +6,7 @@ Subject: [PATCH] Remove unused code from Spigot tick limiters
 Paper removed this feature from Spigot, but forgot to remove some parts of the code/config
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index ea2bc1111714eefaf6352b74f82f5e86e1350f28..6a563d3017b0455dfe27f84e30fd4c23bfc5c333 100644
+index 1c04de6ab70a99e5d5e0060e4b90ea034a5d9567..3ed61bafaee81d47e8cf1e112ac683be85550571 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -135,8 +135,12 @@ public abstract class World implements IBlockAccess {
@@ -35,7 +35,7 @@ index ea2bc1111714eefaf6352b74f82f5e86e1350f28..6a563d3017b0455dfe27f84e30fd4c23
      }
  
      public World b() {
-@@ -1549,7 +1557,7 @@ public abstract class World implements IBlockAccess {
+@@ -1532,7 +1540,7 @@ public abstract class World implements IBlockAccess {
          guardEntityList = true; // Spigot
          // CraftBukkit start - Use field for loop variable
          co.aikar.timings.TimingHistory.entityTicks += this.entityList.size(); // Spigot
@@ -44,7 +44,7 @@ index ea2bc1111714eefaf6352b74f82f5e86e1350f28..6a563d3017b0455dfe27f84e30fd4c23
          // PaperSpigot start - Disable tick limiters
          //if (tickPosition < 0) tickPosition = 0;
          for (tickPosition = 0; tickPosition < entityList.size(); tickPosition++) {
-@@ -1621,14 +1629,14 @@ public abstract class World implements IBlockAccess {
+@@ -1604,14 +1612,14 @@ public abstract class World implements IBlockAccess {
          // CraftBukkit end
  
          // Spigot start
@@ -62,7 +62,7 @@ index ea2bc1111714eefaf6352b74f82f5e86e1350f28..6a563d3017b0455dfe27f84e30fd4c23
                  this.tileEntityList.remove(tileTickPosition--);
                  continue;
              }
-@@ -1648,7 +1656,7 @@ public abstract class World implements IBlockAccess {
+@@ -1631,7 +1639,7 @@ public abstract class World implements IBlockAccess {
                          System.err.println(msg);
                          throwable2.printStackTrace();
                          getServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable2)));
@@ -71,7 +71,7 @@ index ea2bc1111714eefaf6352b74f82f5e86e1350f28..6a563d3017b0455dfe27f84e30fd4c23
                          this.tileEntityList.remove(tileTickPosition--);
                          continue;
                          // PaperSpigot end
-@@ -1662,7 +1670,7 @@ public abstract class World implements IBlockAccess {
+@@ -1645,7 +1653,7 @@ public abstract class World implements IBlockAccess {
              }
  
              if (tileentity.x()) {

@@ -4,6 +4,20 @@ Date: Wed, 16 Oct 2024 22:28:26 -0300
 Subject: [PATCH] Optimize
 
 
+diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+index a685e081258deb8c2b19cf5236fbbb43e0bad64d..6e77daf51b31007ef4f06e324630e844c124237b 100644
+--- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
++++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+@@ -10,6 +10,9 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+     protected int c;
+     protected int d;
+     // PaperSpigot end
++    public boolean isValidLocation() {
++        return a >= -30000000 && d >= -30000000 && a < 30000000 && d < 30000000 && c >= 0 && c < 256;
++    }
+ 
+     public BaseBlockPosition(int i, int j, int k) {
+         this.a = i;
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
 index a19b2709278154189283ab16a6e26f39d5ea1f22..1fb14e6c320a563359885b86cf08546bc69bc1d1 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
@@ -27,3 +41,75 @@ index a19b2709278154189283ab16a6e26f39d5ea1f22..1fb14e6c320a563359885b86cf08546b
              }
          }
          return Blocks.AIR.getBlockData();
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 3ed61bafaee81d47e8cf1e112ac683be85550571..0e397e7ca690e7075fee1320f9a98506f9363420 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -818,18 +818,18 @@ public abstract class World implements IBlockAccess {
+ 
+     // PandaSpigot start - Add getTypeIfLoaded
+     public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
++        final int x = blockposition.getX();
++        final int y = blockposition.getY();
++        final int z = blockposition.getZ();
+         if (captureTreeGeneration) {
+-            Iterator<BlockState> it = capturedBlockStates.iterator();
+-            while (it.hasNext()) {
+-                BlockState previous = it.next();
+-                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
+-                    return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
+-                }
++            final IBlockData previous = getCapturedBlockType(x, y, z);
++            if (previous != null) {
++                return previous;
+             }
+         }
+-        Chunk chunk = this.getChunkIfLoaded(blockposition);
++        Chunk chunk = this.getChunkIfLoaded(x >> 4, z >> 4);
+         if (chunk != null) {
+-            return this.isValidLocation(blockposition) ? chunk.getBlockData(blockposition) : Blocks.AIR.getBlockData();
++            return chunk.getBlockData(x, y, z);
+         }
+         return null;
+     }
+@@ -842,24 +842,29 @@ public abstract class World implements IBlockAccess {
+     
+     public IBlockData getType(BlockPosition blockposition, boolean useCaptured) {
+         // CraftBukkit start - tree generation
++        final int x = blockposition.getX();
++        final int y = blockposition.getY();
++        final int z = blockposition.getZ();
+         if (captureTreeGeneration && useCaptured) {
+     // Spigot end
+-            Iterator<BlockState> it = capturedBlockStates.iterator();
+-            while (it.hasNext()) {
+-                BlockState previous = it.next();
+-                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
+-                    return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
+-                }
++            final IBlockData previous = getCapturedBlockType(x, y, z);
++            if (previous != null) {
++                return previous;
+             }
+         }
+         // CraftBukkit end
+-        if (!this.isValidLocation(blockposition)) {
+-            return Blocks.AIR.getBlockData();
+-        } else {
+-            Chunk chunk = this.getChunkAtWorldCoords(blockposition);
++        return this.getChunkAt(x >> 4, z >> 4).getBlockData(x, y, z);
++    }
+ 
+-            return chunk.getBlockData(blockposition);
++    private IBlockData getCapturedBlockType(int x, int y, int z) {
++        Iterator<BlockState> it = capturedBlockStates.iterator();
++        while (it.hasNext()) {
++            BlockState previous = it.next();
++            if (previous.getX() == x && previous.getY() == y && previous.getZ() == z) {
++                return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
++            }
+         }
++        return null;
+     }
+ 
+     public boolean w() {
