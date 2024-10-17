@@ -6,10 +6,10 @@ Subject: [PATCH] Fix Paper hopper patch
 Upstream commit: https://github.com/PaperMC/Paper/commit/9dffc43aec635a6b44cf43cb07b118044d768cd1
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 9c22cf970288d24a431df836409fc8026dee2384..3cb8d99311e2fa9a4a1173f6ef9e8dee957b20fa 100644
+index a6f5fa39bd0309432b4ba1c15cc96de7e1ce0728..a19b2709278154189283ab16a6e26f39d5ea1f22 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -1034,7 +1034,7 @@ public class Chunk {
+@@ -1029,7 +1029,7 @@ public class Chunk {
  
          // PaperSpigot start
          int[] counts;

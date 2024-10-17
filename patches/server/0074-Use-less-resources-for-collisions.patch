@@ -4,30 +4,6 @@ Date: Sat, 19 Nov 2022 16:20:00 +0100
 Subject: [PATCH] Use less resources for collisions
 
 
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index df28cca6175ff3ddf4992c44a0760ef17310b03e..73e73f457ceb3c6a7011b7392b05f820d66420e9 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -501,11 +501,16 @@ public class Chunk {
-     }
- 
-     // PaperSpigot start - Optimize getBlockData
-+    // PandaSpigot start
-     public IBlockData getBlockData(final BlockPosition blockposition) {
--        if (blockposition.getY() >= 0 && blockposition.getY() >> 4 < this.sections.length) {
--            ChunkSection chunksection = this.sections[blockposition.getY() >> 4];
-+        return this.getBlockData(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+    }
-+    public IBlockData getBlockData(int x, int y, int z) {
-+        if (y >= 0 && y >> 4 < this.sections.length) {
-+            ChunkSection chunksection = this.sections[y >> 4];
-             if (chunksection != null) {
--                return chunksection.getType(blockposition.getX() & 15, blockposition.getY() & 15, blockposition.getZ() & 15);
-+                return chunksection.getType(x & 15, y & 15, z & 15);
-+    // PandaSpigot end
-             }
-         }
-         return Blocks.AIR.getBlockData();
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index 58e485c2e5845dda15c33ee1beb170860535f88b..854cf888d64e50bfd85420bb5dcc93860a64f132 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
@@ -42,7 +18,7 @@ index 58e485c2e5845dda15c33ee1beb170860535f88b..854cf888d64e50bfd85420bb5dcc9386
                          try {
                              iblockdata.getBlock().a(this.world, blockposition2, iblockdata, this);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 46ebdb5e22592658cbd8172390b52edac5344e0f..ba185d2ef2b7970f566aa9c5980dad1e6c80e6f0 100644
+index 8b3c3822c089f3192a5ec3d53bb5d8223a768266..6cfbfe7911d091c0c6deae8e175c0cc10e621a4a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -296,8 +296,13 @@ public abstract class World implements IBlockAccess {

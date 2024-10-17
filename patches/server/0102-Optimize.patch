@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Wed, 16 Oct 2024 22:28:26 -0300
+Subject: [PATCH] Optimize
+
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index a19b2709278154189283ab16a6e26f39d5ea1f22..1fb14e6c320a563359885b86cf08546bc69bc1d1 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -502,10 +502,15 @@ public class Chunk {
+ 
+     // PaperSpigot start - Optimize getBlockData
+     public IBlockData getBlockData(final BlockPosition blockposition) {
+-        if (blockposition.getY() >= 0 && blockposition.getY() >> 4 < this.sections.length) {
+-            ChunkSection chunksection = this.sections[blockposition.getY() >> 4];
++    // PandaSpigot start - Alternative version
++        return getBlockData(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++    }
++    public IBlockData getBlockData(final int x, final int y, final int z) {
++        if (y >= 0 && y >> 4 < this.sections.length) {
++            ChunkSection chunksection = this.sections[y >> 4];
+             if (chunksection != null) {
+-                return chunksection.getType(blockposition.getX() & 15, blockposition.getY() & 15, blockposition.getZ() & 15);
++                return chunksection.getType(x & 15, y & 15, z & 15);
++    // PandaSpigot end
+             }
+         }
+         return Blocks.AIR.getBlockData();
