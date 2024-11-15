@@ -9,11 +9,234 @@ To do:
 - 1E3
 - Add credits, events, test
 
+diff --git a/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncTaskHandler.java b/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncTaskHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..14b42e8ceda3f5b3e9112790c0f9af55e8dd23e0
+--- /dev/null
++++ b/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncTaskHandler.java
+@@ -0,0 +1,141 @@
++package com.hpfxd.pandaspigot.tickloop;
++
++import com.google.common.collect.Queues;
++import java.util.Queue;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.Executor;
++import java.util.concurrent.locks.LockSupport;
++import java.util.function.BooleanSupplier;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++
++public abstract class IAsyncTaskHandler<R extends Runnable> implements Executor {
++
++    private final String b;
++    private static final Logger LOGGER = LogManager.getLogger();
++    private final Queue<R> d = Queues.newConcurrentLinkedQueue();
++    private int e;
++
++    protected IAsyncTaskHandler(String s) {
++        this.b = s;
++    }
++
++    protected abstract R postToMainThread(Runnable runnable);
++
++    protected abstract boolean canExecute(R r0);
++
++    public boolean isMainThread() {
++        return Thread.currentThread() == this.getThread();
++    }
++
++    protected abstract Thread getThread();
++
++    protected boolean isNotMainThread() {
++        return !this.isMainThread();
++    }
++
++    public int be() {
++        return this.d.size();
++    }
++
++    public String bf() {
++        return this.b;
++    }
++
++    private CompletableFuture<Void> executeFuture(Runnable runnable) {
++        return CompletableFuture.supplyAsync(() -> {
++            runnable.run();
++            return null;
++        }, this);
++    }
++
++    public CompletableFuture<Void> e(Runnable runnable) {
++        if (this.isNotMainThread()) {
++            return this.executeFuture(runnable);
++        } else {
++            runnable.run();
++            return CompletableFuture.completedFuture(null); // Paper - decompile fix
++        }
++    }
++
++    public void executeSync(Runnable runnable) {
++        if (!this.isMainThread()) {
++            this.executeFuture(runnable).join();
++        } else {
++            runnable.run();
++        }
++
++    }
++
++    // Paper start
++    public void scheduleOnMain(Runnable r0) {
++        // postToMainThread does not work the same as older versions of mc
++        // This method is actually used to create a TickTask, which can then be posted onto main
++        this.addTask(this.postToMainThread(r0));
++    }
++    // Paper end
++
++    public void addTask(R r0) { a(r0); }; // Paper - OBFHELPER
++    public void a(R r0) {
++        this.d.add(r0);
++        LockSupport.unpark(this.getThread());
++    }
++
++    public void execute(Runnable runnable) {
++        if (this.isNotMainThread()) {
++            this.a(this.postToMainThread(runnable));
++        } else {
++            runnable.run();
++        }
++
++    }
++
++    public void executeAll() { // Paper - protected -> public
++        while (this.executeNext()) {
++            ;
++        }
++
++    }
++
++    protected boolean executeNext() {
++        R r0 = this.d.peek(); // Paper - decompile fix
++
++        if (r0 == null) {
++            return false;
++        } else if (this.e == 0 && !this.canExecute(r0)) {
++            return false;
++        } else {
++            this.executeTask(this.d.remove()); // Paper - decompile fix
++            return true;
++        }
++    }
++
++    public void awaitTasks(BooleanSupplier booleansupplier) {
++        ++this.e;
++
++        try {
++            while (!booleansupplier.getAsBoolean()) {
++                if (!this.executeNext()) {
++                    this.bi();
++                }
++            }
++        } finally {
++            --this.e;
++        }
++
++    }
++
++    protected void bi() {
++        Thread.yield();
++        LockSupport.parkNanos("waiting for tasks", 100000L);
++    }
++
++    protected void executeTask(R r0) {
++        try {
++            r0.run();
++        } catch (Exception exception) {
++            IAsyncTaskHandler.LOGGER.fatal("Error executing task on {}", this.bf(), exception);
++        }
++
++    }
++}
+diff --git a/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncTaskHandlerReentrant.java b/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncTaskHandlerReentrant.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..aa34b08179c60403cdd307aab8928cc47eec3025
+--- /dev/null
++++ b/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncTaskHandlerReentrant.java
+@@ -0,0 +1,28 @@
++package com.hpfxd.pandaspigot.tickloop;
++
++public abstract class IAsyncTaskHandlerReentrant<R extends Runnable> extends IAsyncTaskHandler<R> {
++    private int depth;
++
++    public IAsyncTaskHandlerReentrant(String var0) {
++        super(var0);
++    }
++
++    protected boolean isNotMainThread() {
++        return this.isEntered() || super.isNotMainThread();
++    }
++
++    protected boolean isEntered() {
++        return this.depth != 0;
++    }
++
++    protected void executeTask(R var0) {
++        ++this.depth;
++
++        try {
++            super.executeTask(var0);
++        } finally {
++            --this.depth;
++        }
++
++    }
++}
+diff --git a/src/main/java/com/hpfxd/pandaspigot/tickloop/TickTask.java b/src/main/java/com/hpfxd/pandaspigot/tickloop/TickTask.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4d6cfaf2dbf85d986b9c8586b9dfa06b215a537b
+--- /dev/null
++++ b/src/main/java/com/hpfxd/pandaspigot/tickloop/TickTask.java
+@@ -0,0 +1,19 @@
++package com.hpfxd.pandaspigot.tickloop;
++
++public class TickTask implements Runnable {
++    private final int a;
++    private final Runnable b;
++
++    public TickTask(int var0, Runnable var1) {
++        this.a = var0;
++        this.b = var1;
++    }
++
++    public int a() {
++        return this.a;
++    }
++
++    public void run() {
++        this.b.run();
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b83d774412562540808440eec845da2593383d91..daa8154fbda6de89093d90789f715e76e944bb6c 100644
+index b83d774412562540808440eec845da2593383d91..c3bf95d1f4f753c3510874c8910fed9788279f2f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -517,6 +517,10 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -48,7 +48,7 @@ import org.bukkit.craftbukkit.Main;
+ import co.aikar.timings.SpigotTimings; // Spigot
+ // CraftBukkit end
+ 
+-public abstract class MinecraftServer implements Runnable, ICommandListener, IAsyncTaskHandler, IMojangStatistics {
++public abstract class MinecraftServer extends com.hpfxd.pandaspigot.tickloop.IAsyncTaskHandlerReentrant<com.hpfxd.pandaspigot.tickloop.TickTask> implements Runnable, ICommandListener, IAsyncTaskHandler, IMojangStatistics { // PandaSpigot - Modern Tick Loop
+ 
+     public static final Logger LOGGER = LogManager.getLogger();
+     public static final File a = new File("usercache.json");
+@@ -118,6 +118,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     // CraftBukkit end
+ 
+     public MinecraftServer(OptionSet options, Proxy proxy, File file1) {
++        super("Server"); // PandaSpigot
+         io.netty.util.ResourceLeakDetector.setEnabled( false ); // Spigot - disable
+         this.e = proxy;
+         MinecraftServer.l = this;
+@@ -517,6 +518,10 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      private static final long TICK_TIME = SEC_IN_NANO / TPS;
      private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
      private static final int SAMPLE_INTERVAL = 20;
@@ -24,7 +247,7 @@ index b83d774412562540808440eec845da2593383d91..daa8154fbda6de89093d90789f715e76
      public final RollingAverage tps1 = new RollingAverage(60);
      public final RollingAverage tps5 = new RollingAverage(60 * 5);
      public final RollingAverage tps15 = new RollingAverage(60 * 15);
-@@ -564,7 +568,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -564,7 +569,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          try {
              if (this.init()) {
                  this.ab = az();
@@ -33,7 +256,7 @@ index b83d774412562540808440eec845da2593383d91..daa8154fbda6de89093d90789f715e76
  
                  this.r.setMOTD(new ChatComponentText(this.motd));
                  this.r.setServerInfo(new ServerPing.ServerData("1.8.8", 47));
-@@ -574,9 +578,23 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -574,9 +579,23 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
                  // PaperSpigot start - Further improve tick loop
                  Arrays.fill( recentTps, 20 );
                  //long lastTick = System.nanoTime(), catchupTime = 0, curTime, wait, tickSection = lastTick;
@@ -58,7 +281,7 @@ index b83d774412562540808440eec845da2593383d91..daa8154fbda6de89093d90789f715e76
                      curTime = System.nanoTime();
                      // PaperSpigot start - Further improve tick loop
                      wait = TICK_TIME - (curTime - lastTick);
-@@ -598,6 +616,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -598,6 +617,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
                      }
  
                      catchupTime = Math.min(MAX_CATCHUP_BUFFER, catchupTime - wait);
@@ -66,7 +289,7 @@ index b83d774412562540808440eec845da2593383d91..daa8154fbda6de89093d90789f715e76
  
                      if ( ++MinecraftServer.currentTick % SAMPLE_INTERVAL == 0 )
                      {
-@@ -613,9 +632,15 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -613,9 +633,15 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
                          tickSection = curTime;
                          // PaperSpigot end
                      }
