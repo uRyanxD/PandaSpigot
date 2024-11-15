@@ -3,6 +3,7 @@ From: uRyanxD <familiarodrigues123ro@gmail.com>
 Date: Fri, 15 Nov 2024 15:46:31 -0300
 Subject: [PATCH] Remove migration from old versions of the configuration
 
+TODO: Remove spigotconfig migration
 
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 index 67e56df017b98222e64fc46e97a2b104e6f0d69f..a516990c6fef37b801c918113ebc77082048787c 100644
