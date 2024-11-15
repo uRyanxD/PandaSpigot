@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sat, 2 Nov 2024 21:40:04 -0300
+Subject: [PATCH] Modern Tick Loop
+
+To do:
+- Check if the changes from 1.14 are really necessary, I don't think so
+- Add comments
+- 1E3
+- Add credits, events, test
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index b83d774412562540808440eec845da2593383d91..daa8154fbda6de89093d90789f715e76e944bb6c 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -517,6 +517,10 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     private static final long TICK_TIME = SEC_IN_NANO / TPS;
+     private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
+     private static final int SAMPLE_INTERVAL = 20;
++    // PandaSpigot start - Modern Tick Loop
++    private long lastTick = 0;
++    private long catchupTime = 0;
++    // PandaSpigot end
+     public final RollingAverage tps1 = new RollingAverage(60);
+     public final RollingAverage tps5 = new RollingAverage(60 * 5);
+     public final RollingAverage tps15 = new RollingAverage(60 * 15);
+@@ -564,7 +568,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         try {
+             if (this.init()) {
+                 this.ab = az();
+-                long i = 0L;
++                // long i = 0L; // PandaSpigot - Modern Tick Loop
+ 
+                 this.r.setMOTD(new ChatComponentText(this.motd));
+                 this.r.setServerInfo(new ServerPing.ServerData("1.8.8", 47));
+@@ -574,9 +578,23 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                 // PaperSpigot start - Further improve tick loop
+                 Arrays.fill( recentTps, 20 );
+                 //long lastTick = System.nanoTime(), catchupTime = 0, curTime, wait, tickSection = lastTick;
+-                long start = System.nanoTime(), lastTick = start - TICK_TIME, catchupTime = 0, curTime, wait, tickSection = start;
++                // PandaSpigot start - Modern Tick Loop
++                long start = System.nanoTime(), curTime, tickSection = start;
++                lastTick = start - TICK_TIME;
++                // PandaSpigot end
+                 // PaperSpigot end
+                 while (this.isRunning) {
++                    long i = ((curTime = System.nanoTime()) / (1000L * 1000L)) - ab; // Spigot
++                    if (i > 5000L && this.ab - this.R >= 30000L) { // CraftBukkit
++                        long j = i / 50L;
++                        
++                        if (server.getWarnOnOverload()) // CraftBukkit
++                        LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", i, j);
++                        this.ab += j * 50L;
++                        this.R = this.ab;
++                    }
++
++                    /*
+                     curTime = System.nanoTime();
+                     // PaperSpigot start - Further improve tick loop
+                     wait = TICK_TIME - (curTime - lastTick);
+@@ -598,6 +616,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                     }
+ 
+                     catchupTime = Math.min(MAX_CATCHUP_BUFFER, catchupTime - wait);
++                    */
+ 
+                     if ( ++MinecraftServer.currentTick % SAMPLE_INTERVAL == 0 )
+                     {
+@@ -613,9 +632,15 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                         tickSection = curTime;
+                         // PaperSpigot end
+                     }
+-                    lastTick = curTime;
+ 
+                     this.A();
++                    this.ab += 50L;
++                    lastTick = curTime;
++
++                    while (az() < this.ab) {
++                        Thread.sleep(1L);
++                    }
++
+                     this.Q = true;
+                 }
+                 // Spigot end
