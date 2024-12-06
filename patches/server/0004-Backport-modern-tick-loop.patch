@@ -10,7 +10,7 @@ To do:
 
 diff --git a/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncTaskHandler.java b/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncTaskHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..22baebc4cb6da8d64f47a78f06e6feda41c4b001
+index 0000000000000000000000000000000000000000..bba3d769e9690c5c3c55e5c56041de638cc6d478
 --- /dev/null
 +++ b/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncTaskHandler.java
 @@ -0,0 +1,142 @@
@@ -25,7 +25,7 @@ index 0000000000000000000000000000000000000000..22baebc4cb6da8d64f47a78f06e6feda
 +import org.apache.logging.log4j.LogManager;
 +import org.apache.logging.log4j.Logger;
 +
-+public abstract class IAsyncTaskHandler<R extends Runnable> implements Executor { // Mail?
++public abstract class IAsyncTaskHandler<R extends Runnable> implements Executor {
 +
 +    private final String b;
 +    private static final Logger LOGGER = LogManager.getLogger();
@@ -216,7 +216,7 @@ index 0000000000000000000000000000000000000000..4d6cfaf2dbf85d986b9c8586b9dfa06b
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f53a5feb2 100644
+index b83d774412562540808440eec845da2593383d91..7becc5fbc63dcb72954e90c376427ad657487aa8 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -48,7 +48,7 @@ import org.bukkit.craftbukkit.Main;
@@ -224,7 +224,7 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
  // CraftBukkit end
  
 -public abstract class MinecraftServer implements Runnable, ICommandListener, IAsyncTaskHandler, IMojangStatistics {
-+public abstract class MinecraftServer extends com.hpfxd.pandaspigot.tickloop.IAsyncTaskHandlerReentrant<com.hpfxd.pandaspigot.tickloop.TickTask> implements Runnable, ICommandListener, IAsyncTaskHandler, IMojangStatistics { // PandaSpigot - Modern Tick Loop
++public abstract class MinecraftServer extends com.hpfxd.pandaspigot.tickloop.IAsyncTaskHandlerReentrant<com.hpfxd.pandaspigot.tickloop.TickTask> implements ICommandListener, IAsyncTaskHandler, IMojangStatistics { // PandaSpigot - Modern Tick Loop
  
      public static final Logger LOGGER = LogManager.getLogger();
      public static final File a = new File("usercache.json");
@@ -272,15 +272,13 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
      public final RollingAverage tps1 = new RollingAverage(60);
      public final RollingAverage tps5 = new RollingAverage(60 * 5);
      public final RollingAverage tps15 = new RollingAverage(60 * 15);
-@@ -559,12 +564,19 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -559,12 +564,17 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          }
      }
      // PaperSpigot End
 - 
 +
 +    // PandaSpigot - Modern Tick Loop
-+    //private long ab; final long getTickOversleepMaxTime() { return this.ab; } // Paper - OBFHELPER
-+    // private boolean ac; final boolean hasExecutedTask() { return this.ac; } // Paper - OBFHELPER
 +    private long maxTickTimeOversleepTime;
 +    private boolean executedTask;
 +    private boolean forceTicks; // TODO: implement this
@@ -294,7 +292,7 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
  
                  this.r.setMOTD(new ChatComponentText(this.motd));
                  this.r.setServerInfo(new ServerPing.ServerData("1.8.8", 47));
-@@ -574,9 +586,23 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -574,9 +584,23 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
                  // PaperSpigot start - Further improve tick loop
                  Arrays.fill( recentTps, 20 );
                  //long lastTick = System.nanoTime(), catchupTime = 0, curTime, wait, tickSection = lastTick;
@@ -319,7 +317,7 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
                      curTime = System.nanoTime();
                      // PaperSpigot start - Further improve tick loop
                      wait = TICK_TIME - (curTime - lastTick);
-@@ -598,6 +624,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -598,6 +622,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
                      }
  
                      catchupTime = Math.min(MAX_CATCHUP_BUFFER, catchupTime - wait);
@@ -327,7 +325,7 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
  
                      if ( ++MinecraftServer.currentTick % SAMPLE_INTERVAL == 0 )
                      {
-@@ -614,8 +641,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -614,8 +639,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
                          // PaperSpigot end
                      }
                      lastTick = curTime;
@@ -341,7 +339,7 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
                      this.Q = true;
                  }
                  // Spigot end
-@@ -668,6 +699,70 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -668,6 +697,53 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
  
      }
  
@@ -384,25 +382,8 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
 +    }
 +
 +    private boolean aX() {
-+        if (super.executeNext()) {
-+            return true;
-+        } else {
-+            if (this.canSleepForTick()) {
-+                /*
-+                Iterator iterator = this.getWorlds().iterator();
-+
-+                while (iterator.hasNext()) {
-+                    WorldServer worldserver = (WorldServer) iterator.next();
-+
-+                    if (worldserver.getChunkProvider().runTasks()) {
-+                        return true;
-+                    }
-+                 */
-+                }
-+            }
-+
-+            return false;
-+        }
++        return super.executeNext();
++    }
 +
 +    @Override
 +    public boolean isNotMainThread() {
@@ -412,19 +393,17 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
      private void a(ServerPing serverping) {
          File file = this.d("server-icon.png");
  
-@@ -704,6 +799,11 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -704,6 +780,9 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
  
      protected void A() throws ExceptionWorldConflict { // CraftBukkit - added throws
          co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Spigot
 +        isOversleep = true;
-+        this.awaitTasks(() -> {
-+            return !this.canOversleep();
-+        });
++        this.awaitTasks(() -> { return !this.canOversleep(); });
 +        isOversleep = false;
          long i = System.nanoTime();
  
          ++this.ticks;
-@@ -748,6 +848,8 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -748,6 +827,8 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
              SpigotTimings.worldSaveTimer.stopTiming(); // Spigot
          }
  
@@ -433,7 +412,7 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
          this.methodProfiler.a("tallying");
          this.h[this.ticks % 100] = System.nanoTime() - i;
          this.methodProfiler.b();
-@@ -1037,7 +1139,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -1037,7 +1118,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
                  dedicatedserver.setWorld((String) options.valueOf("world"));
              }
  
@@ -442,7 +421,7 @@ index b83d774412562540808440eec845da2593383d91..521e2bfe633194c0da2aab74d4d26f3f
              // CraftBukkit end
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
-@@ -1612,10 +1714,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -1612,10 +1693,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          }
      }
  
