@@ -7,10 +7,10 @@ Co-authored-by: mechoriet <kevinworm92@gmail.com>
 
 diff --git a/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncHandler.java b/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..206f00352ff0ef6b8c32afaf6e0f17612c745f48
+index 0000000000000000000000000000000000000000..bf1c0da1542a6d6c66a3d1f5795b554a6314179f
 --- /dev/null
 +++ b/src/main/java/com/hpfxd/pandaspigot/tickloop/IAsyncHandler.java
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,132 @@
 +package com.hpfxd.pandaspigot.tickloop;
 +
 +import org.apache.logging.log4j.LogManager;
@@ -56,11 +56,6 @@ index 0000000000000000000000000000000000000000..206f00352ff0ef6b8c32afaf6e0f1761
 +        return this.name;
 +    }
 +
-+    public <V> CompletableFuture<V> submit(Supplier<V> task) {
-+        return this.executables() ? CompletableFuture.supplyAsync(task, this)
-+            : CompletableFuture.completedFuture(task.get());
-+    }
-+
 +    private CompletableFuture<Void> submitAsync(Runnable runnable) {
 +        return CompletableFuture.supplyAsync(() -> {
 +            runnable.run();
@@ -99,10 +94,6 @@ index 0000000000000000000000000000000000000000..206f00352ff0ef6b8c32afaf6e0f1761
 +            runnable.run();
 +        }
 +
-+    }
-+
-+    protected void clearAllRunnable() {
-+        this.pendingRunnables.clear();
 +    }
 +
 +    public void runAllRunnable() {
@@ -231,7 +222,7 @@ index 088beb22b53ddf77dc182dd5ac39e1086d5279aa..6434b8613971a228fb0074390d8223bf
          Thread thread = new Thread("Server Infinisleeper") {
              {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7d19ec833d61c2f75b5eb75d7eb291c7366a1a9a..d7b7b123380791d218b5c6bb113ccaadc0e6ffc5 100644
+index 7d19ec833d61c2f75b5eb75d7eb291c7366a1a9a..a080d723ea23c065696865509266ad806e8927c1 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -48,7 +48,7 @@ import org.bukkit.craftbukkit.Main;
@@ -352,11 +343,10 @@ index 7d19ec833d61c2f75b5eb75d7eb291c7366a1a9a..d7b7b123380791d218b5c6bb113ccaad
                      }
                      lastTick = curTime;
  
--                    this.A();
--                    this.Q = true;
 +                    this.ab += 50L;
 +                    this.methodProfiler.a("tick");
-+                    this.A(this::haveTime);
+                     this.A();
+-                    this.Q = true;
 +                    this.methodProfiler.c("nextTickWait");
 +                    this.mayHaveDelayedTasks = true;
 +                    this.delayedTasksMaxNextTickTime = Math.max(az() + 50L, this.ab);
@@ -428,9 +418,8 @@ index 7d19ec833d61c2f75b5eb75d7eb291c7366a1a9a..d7b7b123380791d218b5c6bb113ccaad
  
      protected void z() {}
  
--    protected void A() throws ExceptionWorldConflict { // CraftBukkit - added throws
 +    // PandaSpigot start - Modern tick loop
-+    protected void A(java.util.function.BooleanSupplier shouldKeepTicking) throws ExceptionWorldConflict { // CraftBukkit - added throws
+     protected void A() throws ExceptionWorldConflict { // CraftBukkit - added throws
          co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Spigot
          long i = System.nanoTime();
 +        isOversleep = true;
