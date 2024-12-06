@@ -1,10 +1,9 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: uRyanxD <familiarodrigues123ro@gmail.com>
 Date: Sat, 2 Nov 2024 21:40:04 -0300
-Subject: [PATCH] Modern Tick Loop
+Subject: [PATCH] Backport modern tick loop
 
 To do:
-- Check if the changes from 1.14 are really necessary, I don't think so
 - Add comments
 - 1E3
 - Add credits, events, test
