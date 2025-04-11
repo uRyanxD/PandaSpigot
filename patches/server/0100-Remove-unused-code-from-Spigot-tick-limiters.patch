@@ -6,7 +6,7 @@ Subject: [PATCH] Remove unused code from Spigot tick limiters
 Paper removed this feature from Spigot, but forgot to remove some parts of the code/config
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 326c881f76b6ba6414563ccb5bcfda7c06e1f798..fe9b4ea7584587c4a4d198e01fc21838ec59f471 100644
+index c30278a593360b4eebd3fdd0519318d6a55e3f2d..fb8b83a629a596eed9c7ee6888d16a3bcda6ca67 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -135,8 +135,12 @@ public abstract class World implements IBlockAccess {
@@ -22,7 +22,7 @@ index 326c881f76b6ba6414563ccb5bcfda7c06e1f798..fe9b4ea7584587c4a4d198e01fc21838
      private int tileTickPosition;
      public ExecutorService lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("PaperSpigot - Lighting Thread").build()); // PaperSpigot - Asynchronous lighting updates
      public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<Explosion.CacheKey, Float>(); // PaperSpigot - Optimize explosions
-@@ -241,8 +245,12 @@ public abstract class World implements IBlockAccess {
+@@ -242,8 +246,12 @@ public abstract class World implements IBlockAccess {
          // CraftBukkit end
          this.keepSpawnInMemory = this.paperSpigotConfig.keepSpawnInMemory; // PaperSpigot
          timings = new co.aikar.timings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
@@ -35,7 +35,7 @@ index 326c881f76b6ba6414563ccb5bcfda7c06e1f798..fe9b4ea7584587c4a4d198e01fc21838
      }
  
      public World b() {
-@@ -1549,12 +1557,12 @@ public abstract class World implements IBlockAccess {
+@@ -1550,12 +1558,12 @@ public abstract class World implements IBlockAccess {
          guardEntityList = true; // Spigot
          // CraftBukkit start - Use field for loop variable
          co.aikar.timings.TimingHistory.entityTicks += this.entityList.size(); // Spigot
@@ -50,7 +50,7 @@ index 326c881f76b6ba6414563ccb5bcfda7c06e1f798..fe9b4ea7584587c4a4d198e01fc21838
              entity = (Entity) this.entityList.get(this.tickPosition);
              // CraftBukkit end
              if (entity.vehicle != null) {
-@@ -1621,14 +1629,14 @@ public abstract class World implements IBlockAccess {
+@@ -1622,14 +1630,14 @@ public abstract class World implements IBlockAccess {
          // CraftBukkit end
  
          // Spigot start
@@ -68,7 +68,7 @@ index 326c881f76b6ba6414563ccb5bcfda7c06e1f798..fe9b4ea7584587c4a4d198e01fc21838
                  this.tileEntityList.remove(tileTickPosition--);
                  continue;
              }
-@@ -1648,7 +1656,7 @@ public abstract class World implements IBlockAccess {
+@@ -1649,7 +1657,7 @@ public abstract class World implements IBlockAccess {
                          System.err.println(msg);
                          throwable2.printStackTrace();
                          getServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable2)));
@@ -77,7 +77,7 @@ index 326c881f76b6ba6414563ccb5bcfda7c06e1f798..fe9b4ea7584587c4a4d198e01fc21838
                          this.tileEntityList.remove(tileTickPosition--);
                          continue;
                          // PaperSpigot end
-@@ -1662,7 +1670,7 @@ public abstract class World implements IBlockAccess {
+@@ -1663,7 +1671,7 @@ public abstract class World implements IBlockAccess {
              }
  
              if (tileentity.x()) {

@@ -5,24 +5,62 @@ Subject: [PATCH] Faster redstone torch rapid clock removal
 
 Only resize the the redstone torch list once, since resizing arrays / lists is costly
 
+TODO Ryan:
+fix comments
+
 diff --git a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
-index 78c6d195a4fe0960b1c5e38d711fe7c723c3a5d3..99d7320be7fd5eb2814c1ca5758f61de56174e65 100644
+index 78c6d195a4fe0960b1c5e38d711fe7c723c3a5d3..66455518dc52b17c5c3f83c795d34f9d95821183 100644
 --- a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
 +++ b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
-@@ -116,9 +116,17 @@ public class BlockRedstoneTorch extends BlockTorch {
+@@ -10,15 +10,16 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+ 
+ public class BlockRedstoneTorch extends BlockTorch {
+ 
+-    private static Map<World, List<BlockRedstoneTorch.RedstoneUpdateInfo>> b = new java.util.WeakHashMap(); // Spigot
++    // private static Map<World, List<BlockRedstoneTorch.RedstoneUpdateInfo>> b = new java.util.WeakHashMap(); // Spigot // PandaSpigot - Move the mapped list to World
+     private final boolean isOn;
+ 
+     private boolean a(World world, BlockPosition blockposition, boolean flag) {
+-        if (!BlockRedstoneTorch.b.containsKey(world)) {
+-            BlockRedstoneTorch.b.put(world, Lists.<BlockRedstoneTorch.RedstoneUpdateInfo>newArrayList()); // CraftBukkit - fix decompile error
++        // PandaSpigot start
++        java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> list = world.redstoneUpdateInfos;
++        if (list == null) {
++            list = world.redstoneUpdateInfos = new java.util.ArrayDeque<>();
+         }
+-
+-        List list = (List) BlockRedstoneTorch.b.get(world);
++        // PandaSpigot end
+ 
+         if (flag) {
+             list.add(new BlockRedstoneTorch.RedstoneUpdateInfo(blockposition, world.getTime()));
+@@ -26,8 +27,10 @@ public class BlockRedstoneTorch extends BlockTorch {
+ 
+         int i = 0;
+ 
+-        for (int j = 0; j < list.size(); ++j) {
+-            BlockRedstoneTorch.RedstoneUpdateInfo blockredstonetorch_redstoneupdateinfo = (BlockRedstoneTorch.RedstoneUpdateInfo) list.get(j);
++        // PandaSpigot start
++        for (java.util.Iterator<BlockRedstoneTorch.RedstoneUpdateInfo> iterator = list.iterator(); iterator.hasNext();) {
++            BlockRedstoneTorch.RedstoneUpdateInfo blockredstonetorch_redstoneupdateinfo = iterator.next();
++        // PandaSpigot end
+ 
+             if (blockredstonetorch_redstoneupdateinfo.a.equals(blockposition)) {
+                 ++i;
+@@ -114,11 +117,16 @@ public class BlockRedstoneTorch extends BlockTorch {
+ 
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
          boolean flag = this.g(world, blockposition, iblockdata);
-         List list = (List) BlockRedstoneTorch.b.get(world);
+-        List list = (List) BlockRedstoneTorch.b.get(world);
++        // PandaSpigot start - Faster redstone torch rapid clock removal
++        java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos = world.redstoneUpdateInfos;
  
 -        while (list != null && !list.isEmpty() && world.getTime() - ((BlockRedstoneTorch.RedstoneUpdateInfo) list.get(0)).b > 60L) {
 -            list.remove(0);
-+        // PandaSpigot start - Faster redstone torch rapid clock removal
-+        if (list != null) {
-+            int index = 0;
-+            while (index < list.size() && world.getTime() - ((BlockRedstoneTorch.RedstoneUpdateInfo) list.get(index)).getTime() > 60L) {
-+                index++;
-+            }
-+            if (index > 0) {
-+                list.subList(0, index).clear();
++        if (redstoneUpdateInfos != null) {
++            BlockRedstoneTorch.RedstoneUpdateInfo curr;
++            while ((curr = redstoneUpdateInfos.peek()) != null && world.getTime() - curr.getTime() > 60L) {
++                redstoneUpdateInfos.poll();
 +            }
          }
 +        // PandaSpigot end
@@ -38,3 +76,15 @@ index 78c6d195a4fe0960b1c5e38d711fe7c723c3a5d3..99d7320be7fd5eb2814c1ca5758f61de
  
          public RedstoneUpdateInfo(BlockPosition blockposition, long i) {
              this.a = blockposition;
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 589bf95c13e9c78c792498a7b73fd0480f4a503d..381bc05e675c3d179fbfeb8df8270d0decb9c3f8 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -140,6 +140,7 @@ public abstract class World implements IBlockAccess {
+     private int tileTickPosition;
+     public ExecutorService lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("PaperSpigot - Lighting Thread").build()); // PaperSpigot - Asynchronous lighting updates
+     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<Explosion.CacheKey, Float>(); // PaperSpigot - Optimize explosions
++    public java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos; // PandaSpigot - Move from Map in BlockRedstoneTorch to here
+ 
+     public static long chunkToKey(int x, int z)
+     {

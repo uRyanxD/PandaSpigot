@@ -20,7 +20,7 @@ index 03fe76355813497a5db33ad185db0e4b40c6f85a..df28cca6175ff3ddf4992c44a0760ef1
          int j = blockposition.getX() & 15;
          int k = blockposition.getY();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 589bf95c13e9c78c792498a7b73fd0480f4a503d..36524e82242dbe948b8a0dba1d538e48b5653a9b 100644
+index 381bc05e675c3d179fbfeb8df8270d0decb9c3f8..6c2c8d1400b19ff7ee60643bfe251ab4cfc84756 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -70,7 +70,7 @@ public abstract class World implements IBlockAccess {
@@ -32,7 +32,7 @@ index 589bf95c13e9c78c792498a7b73fd0480f4a503d..36524e82242dbe948b8a0dba1d538e48
      protected int m = (new Random()).nextInt();
      protected final int n = 1013904223;
      protected float o;
-@@ -175,6 +175,12 @@ public abstract class World implements IBlockAccess {
+@@ -176,6 +176,12 @@ public abstract class World implements IBlockAccess {
          return (CraftServer) Bukkit.getServer();
      }
  
@@ -45,7 +45,7 @@ index 589bf95c13e9c78c792498a7b73fd0480f4a503d..36524e82242dbe948b8a0dba1d538e48
      public Chunk getChunkIfLoaded(int x, int z) {
          return ((ChunkProviderServer) this.chunkProvider).getChunkIfLoaded(x, z);
      }
-@@ -652,10 +658,46 @@ public abstract class World implements IBlockAccess {
+@@ -653,10 +659,46 @@ public abstract class World implements IBlockAccess {
          }
      }
  
@@ -92,7 +92,7 @@ index 589bf95c13e9c78c792498a7b73fd0480f4a503d..36524e82242dbe948b8a0dba1d538e48
      public int c(BlockPosition blockposition, boolean flag) {
          if (blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000) {
              if (flag && this.getType(blockposition).getBlock().s()) {
-@@ -766,6 +808,22 @@ public abstract class World implements IBlockAccess {
+@@ -767,6 +809,22 @@ public abstract class World implements IBlockAccess {
          return this.worldProvider.p()[this.getLightLevel(blockposition)];
      }
  
