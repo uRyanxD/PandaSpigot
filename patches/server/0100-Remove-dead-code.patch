@@ -1,10 +1,36 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: uRyanxD <familiarodrigues123ro@gmail.com>
 Date: Wed, 7 Aug 2024 22:16:50 -0300
-Subject: [PATCH] Remove unused code from Spigot tick limiters
+Subject: [PATCH] Remove dead code
 
-Paper removed this feature from Spigot, but forgot to remove some parts of the code/config
+It is quite common to find unused code ("dead code") that the upstream
+forgot to remove. To make the code easier to understand, this patch aims
+to "comment out the dead code".
+ * Remove dead code related to Spigot ticklimiters and end portal
+   creation
 
+ TODO: originally the person who found the dead code related to the end
+ portal was nachospigot, add credits to the committer
+
+diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+index fa0ad789e58255d3faa01deb5bc15d517790e69a..f1ea66c2ff849ed1336d9955769e154d2644c9b4 100644
+--- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
++++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+@@ -30,9 +30,14 @@ public class PortalTravelAgent {
+                 this.b(entity, f);
+             }
+         } else {
++            // PandaSpigot start - Remove unnecessary calculation
++            // These calculations have been moved to the createEndPortal(x, y, z) method
++            /*
+             int i = MathHelper.floor(entity.locX);
+             int j = MathHelper.floor(entity.locY) - 1;
+             int k = MathHelper.floor(entity.locZ);
++            */
++            // PandaSpigot end
+             // CraftBukkit start - Modularize end portal creation
+             BlockPosition created = this.createEndPortal(entity.locX, entity.locY, entity.locZ);
+             entity.setPositionRotation((double) created.getX(), (double) created.getY(), (double) created.getZ(), entity.yaw, 0.0F);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index c30278a593360b4eebd3fdd0519318d6a55e3f2d..fb8b83a629a596eed9c7ee6888d16a3bcda6ca67 100644
 --- a/src/main/java/net/minecraft/server/World.java
