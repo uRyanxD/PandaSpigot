@@ -13,5 +13,10 @@ indent_size=2
 [*.bat]
 end_of_line=crlf
 
+[*.java]
+ij_continuation_indent_size = 4
+ij_java_class_count_to_use_import_on_demand = 999999
+ij_java_names_count_to_use_import_on_demand = 999999
+
 [PandaSpigot-Server/src/main/java/**.java]
 ij_java_use_fq_class_names = true
