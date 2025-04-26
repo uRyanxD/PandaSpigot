@@ -8,8 +8,5 @@ indent_size=4
 [*.yml]
 indent_size=2
 
-[*.tiny]
-indent_style=tab
-
 [*.bat]
 end_of_line=crlf
