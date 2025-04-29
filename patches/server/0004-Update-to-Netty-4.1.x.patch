@@ -5,7 +5,7 @@ Subject: [PATCH] Update to Netty 4.1.x
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index a3683ff6a707c5966896a363afc39a0aa7c64390..242341aea3f7515693240a643ca1f39846208a9d 100644
+index fa35e6cdc4b3926cc9476830a841e91571117311..68be9d633e9e9fe21613c2f0d4dff5fb65df3f76 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -13,7 +13,7 @@ dependencies {
