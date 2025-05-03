@@ -5,9 +5,18 @@ Subject: [PATCH] Better Tick Loop System
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b83d774412562540808440eec845da2593383d91..c1b664bec8a984a95e0ac3d98c33be413755509e 100644
+index b83d774412562540808440eec845da2593383d91..0d9f04a7a1608d8f7223a51135962717b78e7fcb 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -101,7 +101,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     private final GameProfileRepository Y;
+     private final UserCache Z;
+     protected final Queue<FutureTask<?>> j = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Spigot, PAIL: Rename // PandaSpigot - Make size() constant-time
+-    private Thread serverThread;
++    private final Thread serverThread;
+     private long ab = az();
+ 
+     // CraftBukkit start
 @@ -512,6 +512,10 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      }
  
@@ -166,3 +175,23 @@ index b83d774412562540808440eec845da2593383d91..c1b664bec8a984a95e0ac3d98c33be41
          co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Spigot
      }
  
+@@ -773,8 +820,8 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+ 
+         // Spigot start
+         FutureTask<?> entry;
+-        int count = this.j.size();
+-        while (count-- > 0 && (entry = this.j.poll()) != null) {
++        // int count = this.j.size();
++        while ((entry = this.j.poll()) != null) {
+             SystemUtils.a(entry, MinecraftServer.LOGGER);
+          }
+         // Spigot end
+@@ -1522,7 +1569,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     }
+ 
+     public static long az() {
+-        return System.currentTimeMillis();
++        return System.nanoTime() / 1_000_000;
+     }
+ 
+     public int getIdleTimeout() {

@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Sat, 19 Apr 2025 18:32:12 -0300
+Subject: [PATCH] Use ConcurrentHashMap in JsonList
+
+
+diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
+index 8e4ecfd64bab0137b1d06819bd9380643d47e92e..c2c866e28b2e1a5620918af94535e77c2348b543 100644
+--- a/src/main/java/net/minecraft/server/JsonList.java
++++ b/src/main/java/net/minecraft/server/JsonList.java
+@@ -34,7 +34,7 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+     protected static final Logger a = LogManager.getLogger();
+     protected final Gson b;
+     private final File c;
+-    private final Map<String, V> d = Maps.newHashMap();
++    private final Map<String, V> d = Maps.newConcurrentMap(); private final Map<String, V> getBackingMap() { return this.d; } // PandaSpigot - HashMap -> ConcurrentHashMap, OBFHELPER
+     private boolean e = true;
+     private static final ParameterizedType f = new ParameterizedType() {
+         public Type[] getActualTypeArguments() {
+@@ -82,8 +82,12 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+     }
+ 
+     public V get(K k0) {
++        /*
+         this.h();
+         return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
++        */
++        return (V) this.getBackingMap().computeIfPresent(this.getMappingKey(k0), (k, v) -> v.hasExpired() ? null : v);
++
+     }
+ 
+     public void remove(K k0) {
+@@ -108,9 +112,10 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+     // CraftBukkit end
+ 
+     public boolean isEmpty() {
+-        return this.d.size() < 1;
++        return this.getBackingMap().isEmpty();
+     }
+ 
++    protected String getMappingKey(K k0) { return a(k0); } // PandaSpigot - OBFHELPER
+     protected String a(K k0) {
+         return k0.toString();
+     }
+@@ -119,7 +124,9 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+         return this.d.containsKey(this.a(k0));
+     }
+ 
+-    private void h() {
++    private void removeStaleEntries() { h(); } // PandaSpigot - OBFHELPER
++    private void h() { // TODO: obfhelper, comments
++        /*
+         ArrayList arraylist = Lists.newArrayList();
+         Iterator iterator = this.d.values().iterator();
+ 
+@@ -138,7 +145,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+ 
+             this.d.remove(object);
+         }
+-
++        */
++        this.getValues().removeIf(JsonListEntry::hasExpired);
+     }
+ 
+     protected JsonListEntry<K> a(JsonObject jsonobject) {
+@@ -150,6 +158,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+     }
+ 
+     public void save() throws IOException {
++        this.removeStaleEntries(); // PandaSpigot - Remove expired values before saving
++
+         Collection collection = this.d.values();
+         String s = this.b.toJson(collection);
+         BufferedWriter bufferedwriter = null;
