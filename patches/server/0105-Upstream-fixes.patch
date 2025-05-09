@@ -12,6 +12,9 @@ Subject: [PATCH] Upstream fixes
  * Fix timings not ending or starting
  by uRyanxD <familiarodrigues123ro@gmail.com>
 
+ * Fixes mobs being able to spawn outside the border
+ by md_5 <git@md-5.net>
+
  * Shutdown properly when there is no restart script
  by md_5 <git@md-5.net>
 
@@ -48,6 +51,19 @@ index ada9cf25b091c2df24301bb5e82d1f76fbd929e5..ec7e38773bf0cef2a4125b28a88a1023
          }
  
      }
+diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
+index 7ea40468e93e0026f5c39dc41f9c27d7c59d5fc1..63c15919f528fa5766e203996214d38cc1bdf5db 100644
+--- a/src/main/java/net/minecraft/server/WorldBorder.java
++++ b/src/main/java/net/minecraft/server/WorldBorder.java
+@@ -45,7 +45,7 @@ public class WorldBorder {
+ 
+     // Inlined the getters from ChunkCoordIntPair
+     public boolean isInBounds(int x, int z) {
+-        return (double) ((x  << 4) + 15) > this.b() && (double) (x << 4) < this.d() && (double) ((z  << 4) + 15) > this.c() && (double) (x << 4) < this.e();
++        return (double) ((x  << 4) + 15) > this.b() && (double) (x << 4) < this.d() && (double) ((z  << 4) + 15) > this.c() && (double) (z << 4) < this.e(); // PandaSpigot - Fix mobs being able to spawn outside the border
+     }
+ 
+     public boolean a(AxisAlignedBB axisalignedbb) {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
 index 47af49c25e1ce57a93aa4797f833ef8381fab523..4046d839bef8ead1dffe24cfc37078bf46c13a39 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
