@@ -15,6 +15,9 @@ Subject: [PATCH] Upstream fixes
  * Shutdown properly when there is no restart script
  by md_5 <git@md-5.net>
 
+ * Fix escaping \n in configurable messages
+ by md_5 <git@md-5.net>
+
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
 index f8d9480e7098f48fcc17ae9e9414dcffed6f8580..96133af393367e0ef45bb8222cd63f6373de016f 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
@@ -79,3 +82,16 @@ index 429c25804654b6590c1ae1bc61af66fa1808214c..57f5e87dbe12bb13e66ad971ff4fd3fe
              }
              System.exit( 0 );
          } catch ( Exception ex )
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index dfd1de256e15c800658e1ce8c76a587eeb310e9c..c9300edb38588605862a69336153e9bc921031da 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -197,7 +197,7 @@ public class SpigotConfig
+     public static String outdatedServerMessage = "Outdated server! I\'m still on {0}";
+     private static String transform(String s)
+     {
+-        return ChatColor.translateAlternateColorCodes( '&', s ).replaceAll( "\\n", "\n" );
++        return ChatColor.translateAlternateColorCodes( '&', s ).replaceAll( "\\\\n", "\n" ); // PandaSpigot - Fix escaping \n in configurable messages
+     }
+     private static void messages()
+     {
