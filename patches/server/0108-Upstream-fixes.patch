@@ -1,13 +1,16 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: uRyanxD <familiarodrigues123ro@gmail.com>
-Date: Sat, 22 Feb 2025 14:17:47 -0300
+Date: Sun, 9 Feb 2025 14:11:04 -0300
 Subject: [PATCH] Upstream fixes
+
+ * Fix wrong netty channel being cast to PacketCompressor
+ by uRyanxD <familiarodrigues123ro@gmail.com>
 
  * Fix only one player receiving the server shutdown message
  by md_5 <git@md-5.net>
 
- * Fix wrong netty channel being cast to PacketCompressor
- by uRyanxD <familiarodrigues123ro@gmail.com>
+ * Shutdown properly when there is no restart script
+ by md_5 <git@md-5.net>
 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
 index f8d9480e7098f48fcc17ae9e9414dcffed6f8580..96133af393367e0ef45bb8222cd63f6373de016f 100644
@@ -39,3 +42,23 @@ index ada9cf25b091c2df24301bb5e82d1f76fbd929e5..ec7e38773bf0cef2a4125b28a88a1023
          }
  
      }
+diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
+index 429c25804654b6590c1ae1bc61af66fa1808214c..57f5e87dbe12bb13e66ad971ff4fd3fe73e01a0a 100644
+--- a/src/main/java/org/spigotmc/RestartCommand.java
++++ b/src/main/java/org/spigotmc/RestartCommand.java
+@@ -114,6 +114,15 @@ public class RestartCommand extends Command
+             } else
+             {
+                 System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
++
++                // PandaSpigot start - Shutdown properly when there is no restart script
++                try
++                {
++                    MinecraftServer.getServer().stop();
++                } catch (Throwable t)
++                {
++                }
++                // PandaSpigot end
+             }
+             System.exit( 0 );
+         } catch ( Exception ex )
