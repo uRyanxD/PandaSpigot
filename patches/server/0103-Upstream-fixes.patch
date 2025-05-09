@@ -6,6 +6,9 @@ Subject: [PATCH] Upstream fixes
  * Fix the suction of hopper
  by Aikar <aikar@aikar.co>
 
+ * Fix falling block height nerf not respecting doEntityDrops
+ by Martin Panzer <postremus1996@googlemail.com>
+
  * Fix wrong netty channel being cast to PacketCompressor
  by uRyanxD <familiarodrigues123ro@gmail.com>
 
@@ -37,6 +40,19 @@ index 9c22cf970288d24a431df836409fc8026dee2384..0c8fcedb6cdeba90b11de932025ad4ce
              counts = itemCounts;
          } else if (IInventory.class.isAssignableFrom(oclass)) {
              counts = inventoryEntityCounts;
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index 36c384eb9c2280e618eac770ce67ad0abfd7dc88..cc413d0851b3c866c6b6fd95f811ad54683fbdc0 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -93,7 +93,7 @@ public class EntityFallingBlock extends Entity {
+ 
+             // PaperSpigot start - Drop falling blocks above the specified height
+             if (this.world.paperSpigotConfig.fallingBlockHeightNerf != 0 && this.locY > this.world.paperSpigotConfig.fallingBlockHeightNerf) {
+-                if (this.dropItem) {
++                if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) { // PandaSpigot - Fix falling block height nerf not respecting doEntityDrops
+                     this.a(new ItemStack(block, 1, block.getDropData(this.block)), 0.0F);
+                 }
+ 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
 index f8d9480e7098f48fcc17ae9e9414dcffed6f8580..96133af393367e0ef45bb8222cd63f6373de016f 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
