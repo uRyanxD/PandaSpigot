@@ -9,6 +9,9 @@ Subject: [PATCH] Upstream fixes
  * Fix only one player receiving the server shutdown message
  by md_5 <git@md-5.net>
 
+ * Fix timings not ending or starting
+ by uRyanxD <familiarodrigues123ro@gmail.com>
+
  * Shutdown properly when there is no restart script
  by md_5 <git@md-5.net>
 
@@ -41,6 +44,20 @@ index ada9cf25b091c2df24301bb5e82d1f76fbd929e5..ec7e38773bf0cef2a4125b28a88a1023
 +        // PandaSpigot end
          }
  
+     }
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 47af49c25e1ce57a93aa4797f833ef8381fab523..4046d839bef8ead1dffe24cfc37078bf46c13a39 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -271,7 +271,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         this.methodProfiler.b();
+         timings.doSounds.startTiming(); // Spigot
+         this.ak();
++        timings.doSounds.stopTiming(); // PandaSpigot - Stop timing of Sounds
+ 
++        timings.doChunkGC.startTiming(); // PandaSpigot - Start timing of ChunkGC
+         this.getWorld().processChunkGC(); // CraftBukkit
+         timings.doChunkGC.stopTiming(); // Spigot
      }
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
 index 429c25804654b6590c1ae1bc61af66fa1808214c..57f5e87dbe12bb13e66ad971ff4fd3fe73e01a0a 100644
