@@ -3,6 +3,9 @@ From: uRyanxD <familiarodrigues123ro@gmail.com>
 Date: Sun, 9 Feb 2025 14:11:04 -0300
 Subject: [PATCH] Upstream fixes
 
+ * Fix the suction of hopper
+ by Aikar <aikar@aikar.co>
+
  * Fix wrong netty channel being cast to PacketCompressor
  by uRyanxD <familiarodrigues123ro@gmail.com>
 
@@ -21,6 +24,19 @@ Subject: [PATCH] Upstream fixes
  * Fix escaping \n in configurable messages
  by md_5 <git@md-5.net>
 
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 9c22cf970288d24a431df836409fc8026dee2384..0c8fcedb6cdeba90b11de932025ad4ce6b69d860 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -1034,7 +1034,7 @@ public class Chunk {
+ 
+         // PaperSpigot start
+         int[] counts;
+-        if (ItemStack.class.isAssignableFrom(oclass)) {
++        if (EntityItem.class.isAssignableFrom(oclass)) { // PandaSpigot - Fix the suction of hopper
+             counts = itemCounts;
+         } else if (IInventory.class.isAssignableFrom(oclass)) {
+             counts = inventoryEntityCounts;
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
 index f8d9480e7098f48fcc17ae9e9414dcffed6f8580..96133af393367e0ef45bb8222cd63f6373de016f 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
