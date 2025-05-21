@@ -26,7 +26,7 @@ index b8f4a69a1cac37722077f0510c72b087255c892c..80e59495f318e8f99f9db3a992ed33f5
      public int ae; public int getChunkX() { return ae; } // PAIL
      public int af; public int getChunkY() { return af; } // PAIL
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index fe9b4ea7584587c4a4d198e01fc21838ec59f471..2f9443cc2c4b092aa1d9199fb1e84638b4d7e229 100644
+index fe9b4ea7584587c4a4d198e01fc21838ec59f471..ecf0469e2c225f90fef042929c0eaa3df034580c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1758,7 +1758,7 @@ public abstract class World implements IBlockAccess {
@@ -34,7 +34,7 @@ index fe9b4ea7584587c4a4d198e01fc21838ec59f471..2f9443cc2c4b092aa1d9199fb1e84638
  
          // Spigot start
 -        if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
-+        if (flag && !org.spigotmc.ActivationRange.checkIfActive(entity)) { // PandaSpigot - Only skip tick if flag is set
++        if (flag && !org.spigotmc.ActivationRange.checkIfActive(entity)) { // PandaSpigot - Only skip ticking and chunk teleport processing if the flag is set
              entity.ticksLived++;
              entity.inactiveTick();
              // PaperSpigot start - Remove entities in unloaded chunks
