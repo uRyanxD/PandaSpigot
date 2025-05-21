@@ -5,7 +5,7 @@ Subject: [PATCH] Better Tick Loop System
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b83d774412562540808440eec845da2593383d91..c1b664bec8a984a95e0ac3d98c33be413755509e 100644
+index b83d774412562540808440eec845da2593383d91..f6d9d8056b7a4ace3f5ae6cdf0f53fccf55b635e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -512,6 +512,10 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
@@ -166,3 +166,17 @@ index b83d774412562540808440eec845da2593383d91..c1b664bec8a984a95e0ac3d98c33be41
          co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Spigot
      }
  
+@@ -773,9 +820,11 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+ 
+         // Spigot start
+         FutureTask<?> entry;
+-        int count = this.j.size();
+-        while (count-- > 0 && (entry = this.j.poll()) != null) {
++        // PandaSpigot start - Removed redundant size check, the following logic already handles this
++        // int count = this.j.size();
++        while (/*count-- > 0 &&*/ (entry = this.j.poll()) != null) {
+             SystemUtils.a(entry, MinecraftServer.LOGGER);
++        // PandaSpigot end
+          }
+         // Spigot end
+         SpigotTimings.minecraftSchedulerTimer.stopTiming(); // Spigot
