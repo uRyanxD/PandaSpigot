@@ -5,7 +5,7 @@ Subject: [PATCH] Better Tick Loop System
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b83d774412562540808440eec845da2593383d91..f6d9d8056b7a4ace3f5ae6cdf0f53fccf55b635e 100644
+index b83d774412562540808440eec845da2593383d91..0dc9c61e40dabbfd3f00e8f83d69226fdaebfd38 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -512,6 +512,10 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
@@ -180,3 +180,12 @@ index b83d774412562540808440eec845da2593383d91..f6d9d8056b7a4ace3f5ae6cdf0f53fcc
           }
          // Spigot end
          SpigotTimings.minecraftSchedulerTimer.stopTiming(); // Spigot
+@@ -1522,7 +1571,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     }
+ 
+     public static long az() {
+-        return System.currentTimeMillis();
++        return System.nanoTime() / 1_000_000; // PandaSpigot - Use System.nanoTime()
+     }
+ 
+     public int getIdleTimeout() {
