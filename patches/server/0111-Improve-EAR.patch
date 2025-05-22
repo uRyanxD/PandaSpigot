@@ -5,14 +5,14 @@ Subject: [PATCH] Improve EAR
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index b8f4a69a1cac37722077f0510c72b087255c892c..80e59495f318e8f99f9db3a992ed33f58c409efe 100644
+index b8f4a69a1cac37722077f0510c72b087255c892c..70c58ae9c4463ae883e2b207d2d3a9ae40537674 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -118,11 +118,15 @@ public abstract class Entity implements ICommandListener {
      public boolean ad;
      // PaperSpigot start - EAR: Fix bug with teleporting entities
      public boolean isAddedToChunk() {
-+        // PandaSpigot start - Properly fixed by us
++        // PandaSpigot start - Remove workaround, we fixed this properly
 +        /*
          int chunkX = MathHelper.floor(locX / 16.0D);
          int chunkY = MathHelper.floor(locY / 16.0D);
