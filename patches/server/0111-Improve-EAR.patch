@@ -39,7 +39,7 @@ index fe9b4ea7584587c4a4d198e01fc21838ec59f471..ecf0469e2c225f90fef042929c0eaa3d
              entity.inactiveTick();
              // PaperSpigot start - Remove entities in unloaded chunks
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index d3767d2a8963e72253fd05b4d177acd7415158bb..37df4ec0a86a066882766bc32658c83fe0276ec7 100644
+index d3767d2a8963e72253fd05b4d177acd7415158bb..3878e903be6d4fc424c1292e26618ab0fea2be3a 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -128,9 +128,12 @@ public class ActivationRange
@@ -47,13 +47,13 @@ index d3767d2a8963e72253fd05b4d177acd7415158bb..37df4ec0a86a066882766bc32658c83f
                  for ( int j1 = k; j1 <= l; ++j1 )
                  {
 -                    if ( world.getWorld().isChunkLoaded( i1, j1 ) )
-+                    // PandaSpigot - Optimize EAR
++                    // PandaSpigot start - Optimize EAR
 +                    Chunk chunk = world.getChunkIfLoaded(i1, j1);
 +                    if ( chunk != null )
                      {
 -                        activateChunkEntities( world.getChunkAt( i1, j1 ) );
 +                        activateChunkEntities( chunk );
-+                    // PandaSpigot - Optimize EAR
++                    // PandaSpigot end
                      }
                  }
              }
