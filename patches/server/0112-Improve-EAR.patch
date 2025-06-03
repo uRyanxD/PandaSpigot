@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: uRyanxD <familiarodrigues123ro@gmail.com>
+Date: Tue, 3 Jun 2025 18:06:40 -0300
+Subject: [PATCH] Improve EAR
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index b8f4a69a1cac37722077f0510c72b087255c892c..0b8f047729317edcccb57160be5d95f0992856fd 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -118,11 +118,15 @@ public abstract class Entity implements ICommandListener {
+     public boolean ad;
+     // PaperSpigot start - EAR: Fix bug with teleporting entities
+     public boolean isAddedToChunk() {
++        // PandaSpigot start - Remove workaround
++        /*
+         int chunkX = MathHelper.floor(locX / 16.0D);
+         int chunkY = MathHelper.floor(locY / 16.0D);
+         int chunkZ = MathHelper.floor(locZ / 16.0D);
++        */
+ 
+-        return ad && getChunkX() == chunkX && getChunkY() == chunkY || getChunkZ() == chunkZ;
++        return ad /*&& getChunkX() == chunkX && getChunkY() == chunkY || getChunkZ() == chunkZ*/;
++        // PandaSpigot end
+     }
+     public int ae; public int getChunkX() { return ae; } // PAIL
+     public int af; public int getChunkY() { return af; } // PAIL
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index fe9b4ea7584587c4a4d198e01fc21838ec59f471..082d5b3dc50e85eee0f6d640e37d3bd648d805fd 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1758,7 +1758,7 @@ public abstract class World implements IBlockAccess {
+         byte b0 = 32;
+ 
+         // Spigot start
+-        if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
++        if (flag && !org.spigotmc.ActivationRange.checkIfActive(entity)) { // PandaSpigot - Only skip if flag is set
+             entity.ticksLived++;
+             entity.inactiveTick();
+             // PaperSpigot start - Remove entities in unloaded chunks
