@@ -3,6 +3,7 @@ From: cswhite2000 <18whitechristop@gmail.com>
 Date: Mon, 6 Aug 2018 16:39:57 -0700
 Subject: [PATCH] Fix Decompilation errors
 
+Most of the bugs here are due to CraftBukkit having disabled LVT, causing parameter loss in lists and the use of "generic" lists. When re-enabling it, Fernflower fails to decompile some classes. I tried creating code to reproduce the problem and report it to JetBrains, but I couldn't. :C
 
 diff --git a/src/main/java/net/minecraft/server/Achievement.java b/src/main/java/net/minecraft/server/Achievement.java
 index a110a484f5e696b1443e2a78a7ac6972a3e74720..f1d2bd2ffcd172fe58785574096801d297a5270b 100644
@@ -218,7 +219,7 @@ index 48dcbc9c073e92ed640706d9322f67c3255821cd..13a165f9af83a33ed7f547f9a5e4b92e
  
              if (this.b.containsKey(s1)) {
 diff --git a/src/main/java/net/minecraft/server/BlockStateList.java b/src/main/java/net/minecraft/server/BlockStateList.java
-index af665e7f924e57bfb1d3edeb7a9e3b3144f5bc3a..30585ea8f9f7b2c09f66df15880d7943f43044ae 100644
+index af665e7f924e57bfb1d3edeb7a9e3b3144f5bc3a..5539fbdcf02b0edb82d3d4c9488b6403e85887dd 100644
 --- a/src/main/java/net/minecraft/server/BlockStateList.java
 +++ b/src/main/java/net/minecraft/server/BlockStateList.java
 @@ -28,8 +28,8 @@ public class BlockStateList {
@@ -254,7 +255,7 @@ index af665e7f924e57bfb1d3edeb7a9e3b3144f5bc3a..30585ea8f9f7b2c09f66df15880d7943
                  HashBasedTable hashbasedtable = HashBasedTable.create();
  
 -                for (IBlockState iblockstate : this.b.keySet()) {
-+                for (IBlockState<?> iblockstate : this.b.keySet()) {
++                for (IBlockState<? extends Comparable> iblockstate : this.b.keySet()) {
                      for (Comparable comparable : iblockstate.c()) {
                          if (comparable != this.b.get(iblockstate)) {
                              hashbasedtable.put(iblockstate, comparable, map.get(this.b(iblockstate, comparable)));
