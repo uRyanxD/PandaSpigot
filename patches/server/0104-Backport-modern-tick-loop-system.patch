@@ -7,10 +7,10 @@ Also removes redundant empty list check before putting a task on the
 main thread
 
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..22d535d353608361d7fa34d74ed850816eb5b583 100644
+index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..3ec725225db92ca3b72a3a8af7c12e7966f0dd52 100644
 --- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 +++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-@@ -1,10 +1,120 @@
+@@ -1,10 +1,117 @@
  package net.minecraft.server;
  
 -import com.google.common.util.concurrent.ListenableFuture;
@@ -81,10 +81,7 @@ index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..22d535d353608361d7fa34d74ed85081
 +    }
 +
 +    public void postToMainThread(Runnable runnable) { // compat
-+        R task = this.wrapRunnable(runnable);
-+        if (this.scheduleExecutables()) {
-+            this.schedule(task);
-+        }
++        execute(runnable);
 +    }
 +
 +    protected void dropAllTasks() {
