@@ -7,7 +7,7 @@ Also removes redundant empty list check before putting a task on the
 main thread
 
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..3ec725225db92ca3b72a3a8af7c12e7966f0dd52 100644
+index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..96f56d5716f12c74621f23589a80ea71c1454a3e 100644
 --- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 +++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 @@ -1,10 +1,117 @@
@@ -26,7 +26,7 @@ index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..3ec725225db92ca3b72a3a8af7c12e79
 +import java.util.function.Supplier;
  
 -    ListenableFuture<Object> postToMainThread(Runnable runnable);
-+public abstract class IAsyncTaskHandler<R extends Runnable> { // todo worlserver, playerconutils, minecraftserver, posttomainthread/getthread/etc, a() minecrafsv
++public abstract class IAsyncTaskHandler<R extends Runnable> { // todo minecraftserver, posttomainthread/getthread/etc, a() minecrafsv
  
 -    boolean isMainThread();
 +    public static final long BLOCK_TIME_NANOS = 100000L;
@@ -483,19 +483,21 @@ index d50108c037294c29086aff3544603f800805401e..a5822ae91f56d103de8a9c20aa48ef7b
          return this.ab;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
-index 2956c34ea5e158a26a9d15b1e9d88aa61c94e805..19c58e256990f8158345aaa0f8a3b2e1a40c9227 100644
+index 2956c34ea5e158a26a9d15b1e9d88aa61c94e805..1a8964d05cf74d65772e00ff18286178db9f62ca 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
-@@ -2,7 +2,11 @@ package net.minecraft.server;
+@@ -2,7 +2,13 @@ package net.minecraft.server;
  
  public class PlayerConnectionUtils {
  
 -    public static <T extends PacketListener> void ensureMainThread(final Packet<T> packet, final T t0, IAsyncTaskHandler iasynctaskhandler) throws CancelledPacketHandleException {
++    // PandaSpigot start - Redirect to MinecraftServer
 +    public static <T extends PacketListener> void ensureMainThread(final Packet<T> packet, final T t0, WorldServer worldServer) throws CancelledPacketHandleException {
 +        ensureMainThread(packet, t0, worldServer.getMinecraftServer());
 +    }
 +
 +    public static <T extends PacketListener> void ensureMainThread(final Packet<T> packet, final T t0, IAsyncTaskHandler<?> iasynctaskhandler) throws CancelledPacketHandleException {
++    // PandaSpigot end
          if (!iasynctaskhandler.isMainThread()) {
              iasynctaskhandler.postToMainThread(new Runnable() {
                  public void run() {
@@ -539,7 +541,7 @@ index 0000000000000000000000000000000000000000..976cf4ee035d9a40dee8a3ccf284977e
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 99eb33eef6e11f76385afd536a921e5cffa21cb8..3638d27cfac3b4dcfe48544838c9f1c8b7c6ee6c 100644
+index 99eb33eef6e11f76385afd536a921e5cffa21cb8..379bff423212f5af8037f3fc946b8508296a4425 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -29,7 +29,7 @@ import org.bukkit.event.block.BlockFormEvent;
@@ -547,23 +549,25 @@ index 99eb33eef6e11f76385afd536a921e5cffa21cb8..3638d27cfac3b4dcfe48544838c9f1c8
  // CraftBukkit end
  
 -public class WorldServer extends World implements IAsyncTaskHandler {
-+public class WorldServer extends World /*implements IAsyncTaskHandler*/ {
++public class WorldServer extends World /*implements IAsyncTaskHandler*/ { // PandaSpigot - Handled on MinecraftServer
  
      private static final Logger a = LogManager.getLogger();
      private final MinecraftServer server;
-@@ -1229,6 +1229,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1229,6 +1229,8 @@ public class WorldServer extends World implements IAsyncTaskHandler {
          return (Entity) this.entitiesByUUID.get(uuid);
      }
  
++    // PandaSpigot start - Handled on MinecraftServer
 +    /*
      public ListenableFuture<Object> postToMainThread(Runnable runnable) {
          return this.server.postToMainThread(runnable);
      }
-@@ -1236,6 +1237,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1236,6 +1238,8 @@ public class WorldServer extends World implements IAsyncTaskHandler {
      public boolean isMainThread() {
          return this.server.isMainThread();
      }
 +    */
++    // PandaSpigot end
  
      static class BlockActionDataList extends ArrayList<BlockActionData> {
  
