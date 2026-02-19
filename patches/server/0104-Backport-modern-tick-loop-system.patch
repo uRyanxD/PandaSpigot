@@ -7,10 +7,10 @@ Also removes redundant empty list check before putting a task on the
 main thread
 
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..96f56d5716f12c74621f23589a80ea71c1454a3e 100644
+index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..a7daf6a54410fdd13bd3b25273f32890c4dcb8e9 100644
 --- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 +++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-@@ -1,10 +1,117 @@
+@@ -1,10 +1,113 @@
  package net.minecraft.server;
  
 -import com.google.common.util.concurrent.ListenableFuture;
@@ -26,7 +26,7 @@ index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..96f56d5716f12c74621f23589a80ea71
 +import java.util.function.Supplier;
  
 -    ListenableFuture<Object> postToMainThread(Runnable runnable);
-+public abstract class IAsyncTaskHandler<R extends Runnable> { // todo minecraftserver, posttomainthread/getthread/etc, a() minecrafsv
++public abstract class IAsyncTaskHandler<R extends Runnable> { // todo minecraftserver, posttomainthread/etc, a() minecrafsv
  
 -    boolean isMainThread();
 +    public static final long BLOCK_TIME_NANOS = 100000L;
@@ -50,14 +50,10 @@ index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..96f56d5716f12c74621f23589a80ea71
 +        return Thread.currentThread() == this.aM();
 +    }
 +
-+    protected abstract Thread aM(); // name
++    protected abstract Thread aM();
 +
 +    protected boolean scheduleExecutables() {
 +        return !this.isMainThread();
-+    }
-+
-+    public int getPendingTasksCount() {
-+        return this.pendingTasks.size();
 +    }
 +
 +    //@Override
@@ -71,7 +67,7 @@ index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..96f56d5716f12c74621f23589a80ea71
 +        LockSupport.unpark(aM());
 +    }
 +
-+    public void execute(final Runnable command) { // name
++    public void execute(final Runnable command) {
 +        R task = this.wrapRunnable(command);
 +        if (this.scheduleExecutables()) {
 +            this.schedule(task);
@@ -80,7 +76,7 @@ index 41cdbe73cde7ce1bac0d5dab3bd8e9e6ef69a7b0..96f56d5716f12c74621f23589a80ea71
 +        }
 +    }
 +
-+    public void postToMainThread(Runnable runnable) { // compat
++    public void postToMainThread(Runnable runnable) {
 +        execute(runnable);
 +    }
 +
