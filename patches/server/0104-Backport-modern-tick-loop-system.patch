@@ -161,7 +161,7 @@ index 0000000000000000000000000000000000000000..1ebcb8289301c1b474300b29856602b9
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index d50108c037294c29086aff3544603f800805401e..8d56dda90daa0cc73714c9bdf72e092ad1819b6b 100644
+index d50108c037294c29086aff3544603f800805401e..cbba04a7fb2ed718bd5b136e340c76277f65bd19 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -40,6 +40,7 @@ import org.apache.logging.log4j.Logger;
@@ -392,7 +392,7 @@ index d50108c037294c29086aff3544603f800805401e..8d56dda90daa0cc73714c9bdf72e092a
  
          ++this.ticks;
          if (this.T) {
-@@ -763,11 +836,17 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -763,10 +836,16 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          this.methodProfiler.b();
          this.methodProfiler.b();
          org.spigotmc.WatchdogThread.tick(); // Spigot
@@ -405,11 +405,10 @@ index d50108c037294c29086aff3544603f800805401e..8d56dda90daa0cc73714c9bdf72e092a
      }
  
      public void B() {
-         SpigotTimings.minecraftSchedulerTimer.startTiming(); // Spigot
 +        /* // TODO: methodprofiler, timings?
+         SpigotTimings.minecraftSchedulerTimer.startTiming(); // Spigot
          this.methodProfiler.a("jobs");
          Queue queue = this.j;
- 
 @@ -779,8 +858,9 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
           }
          // Spigot end
@@ -421,15 +420,6 @@ index d50108c037294c29086aff3544603f800805401e..8d56dda90daa0cc73714c9bdf72e092a
  
          SpigotTimings.bukkitSchedulerTimer.startTiming(); // Spigot
          // CraftBukkit start
-@@ -788,7 +868,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
-         SpigotTimings.bukkitSchedulerTimer.stopTiming(); // Spigot
- 
-         // Run tasks that are waiting on processing
--        SpigotTimings.processQueueTimer.startTiming(); // Spigot
-+        SpigotTimings.processQueueTimer.startTiming(); // Spigot // TODO: check
-         while (!processQueue.isEmpty()) {
-             processQueue.remove().run();
-         }
 @@ -1522,7 +1602,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      }
  
