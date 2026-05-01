@@ -161,18 +161,19 @@ index 0000000000000000000000000000000000000000..1ebcb8289301c1b474300b29856602b9
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b195e4376e 100644
+index ef17d45eb60ea375aad19ccc31773fa3c2346841..79b430c8192c3448c31133baba5a15674a709fa2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -40,6 +40,7 @@ import org.apache.logging.log4j.Logger;
+@@ -40,6 +40,8 @@ import org.apache.logging.log4j.Logger;
  
  // CraftBukkit start
  import java.io.IOException;
++import java.util.concurrent.TimeUnit;
 +import java.util.concurrent.locks.LockSupport;
  
  //import jline.console.ConsoleReader; // PandaSpigot - comment out
  import joptsimple.OptionSet;
-@@ -48,7 +49,7 @@ import org.bukkit.craftbukkit.Main;
+@@ -48,7 +50,7 @@ import org.bukkit.craftbukkit.Main;
  import co.aikar.timings.SpigotTimings; // Spigot
  // CraftBukkit end
  
@@ -181,7 +182,7 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
  
      public static final Logger LOGGER = LogManager.getLogger();
      public static final File a = new File("usercache.json");
-@@ -91,7 +92,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -91,7 +93,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      private String O = "";
      private String P = "";
      private boolean Q;
@@ -190,7 +191,7 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
      private String S;
      private boolean T;
      private boolean U;
-@@ -100,7 +101,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -100,7 +102,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      private long X = 0L;
      private final GameProfileRepository Y;
      private final UserCache Z;
@@ -199,12 +200,12 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
      private Thread serverThread;
      private long ab = az();
  
-@@ -116,8 +117,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -116,8 +118,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
      // CraftBukkit end
 +    private boolean mayHaveDelayedTasks;
-+    private long delayedTasksMaxNextTickTimeNanos;
++    private long delayedTasksMaxNextTickTime;
 +    private boolean waitingForNextTick;
  
      public MinecraftServer(OptionSet options, Proxy proxy, File file1) {
@@ -212,7 +213,7 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
          io.netty.util.ResourceLeakDetector.setEnabled( false ); // Spigot - disable
          this.e = proxy;
          MinecraftServer.l = this;
-@@ -512,6 +517,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -512,6 +518,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      }
  
      // PaperSpigot start - Further improve tick loop
@@ -220,7 +221,7 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
      private static final int TPS = 20;
      private static final long SEC_IN_NANO = 1000000000;
      private static final long TICK_TIME = SEC_IN_NANO / TPS;
-@@ -525,46 +531,54 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -525,46 +532,54 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      public static class RollingAverage {
          private final int size;
          private long time;
@@ -285,7 +286,7 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
  
                  this.r.setMOTD(new ChatComponentText(this.motd));
                  this.r.setServerInfo(new ServerPing.ServerData("1.8.8", 47));
-@@ -573,10 +587,24 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -573,10 +588,23 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
                  // Spigot start
                  // PaperSpigot start - Further improve tick loop
                  Arrays.fill( recentTps, 20 );
@@ -297,9 +298,8 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
 +                // PandaSpigot end
                  // PaperSpigot end
                  while (this.isRunning) {
-+                    // PandaSpigot start - New Tick Loop System
-+                    curTime = System.nanoTime();
-+                    long i = az() - this.ab; // TODO: Check
++                    // PandaSpigot start - New Tick Loop System;
++                    long i = ((curTime = System.nanoTime()) / (1000L * 1000L)) - this.ab; // TODO: check
 +                    if (i > 5000L && this.ab - this.R >= 30000L) { // CraftBukkit
 +                        long j = i / 50L;
 +                        if (server.getWarnOnOverload()) { // CraftBukkit
@@ -336,7 +336,7 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
 +
                      this.A();
 +                    this.mayHaveDelayedTasks = true;
-+                    this.delayedTasksMaxNextTickTimeNanos = Math.max(az() + 50L, this.ab); // TODO
++                    this.delayedTasksMaxNextTickTime = Math.max(az() + 50L, this.ab); // TODO
 +                    this.waitUntilNextTick();
 +                    // PandaSpigot end
 +
@@ -348,7 +348,7 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
      }
  
 +    private boolean haveTime() {
-+        return this.runningTask() || az() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTimeNanos : this.ab);
++        return this.runningTask() || az() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTime : this.ab);
 +    }
 +
 +    protected void waitUntilNextTick() {
@@ -364,7 +364,7 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
 +
 +    @Override
 +    protected void waitForTasks() {
-+        long waitNanos = this.waitingForNextTick ? this.ab - az() : IAsyncTaskHandler.BLOCK_TIME_NANOS; // todo
++        long waitNanos = this.waitingForNextTick ? TimeUnit.MILLISECONDS.toNanos(this.ab - az()) : IAsyncTaskHandler.BLOCK_TIME_NANOS; // todo
 +        LockSupport.parkNanos("waiting for tasks", waitNanos);
 +    }
 +
@@ -425,7 +425,7 @@ index ef17d45eb60ea375aad19ccc31773fa3c2346841..28cf015c236cfd86d5b8c5de2b1f13b1
  
      public static long az() {
 -        return System.currentTimeMillis();
-+        return System.nanoTime() / 1000000L; // PandaSpigot - Modern Tick Loop // TODO: Check
++        return System.nanoTime() / 1000000L; // PandaSpigot - Modern Tick Loop // TODO: Check all uses
      }
  
      public int getIdleTimeout() {
@@ -479,14 +479,14 @@ index 2956c34ea5e158a26a9d15b1e9d88aa61c94e805..1a8964d05cf74d65772e00ff18286178
              iasynctaskhandler.postToMainThread(new Runnable() {
                  public void run() {
 diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
-index 7b784acdf090dac4b0c777ecec396c511392e127..16b42be87fe610ff2e0c388462a6ef4c6575c709 100644
+index 7b784acdf090dac4b0c777ecec396c511392e127..d7c8b2e2bf719289ded3410ac6fd104cb3e90b2d 100644
 --- a/src/main/java/net/minecraft/server/SystemUtils.java
 +++ b/src/main/java/net/minecraft/server/SystemUtils.java
 @@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
  
  public class SystemUtils {
  
-+    // todo
++    @Deprecated // PandaSpigot - Modern Tick Loop; No longer necessary
      public static <V> V a(FutureTask<V> futuretask, Logger logger) {
          try {
              futuretask.run();
