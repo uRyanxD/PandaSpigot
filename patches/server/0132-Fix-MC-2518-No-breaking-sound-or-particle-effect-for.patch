@@ -6,36 +6,38 @@ Subject: [PATCH] Fix MC-2518: No breaking sound or particle effect for some
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 9d8bb72b469163db7def78f623d18dc4056b1f6b..d55ad2cb8836ea552774803a0874d112195d4b4e 100644
+index 9d8bb72b469163db7def78f623d18dc4056b1f6b..e5da5d5d8ec2e25d02847a8db1dcb8df3f237080 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -858,6 +858,8 @@ public abstract class Entity implements ICommandListener {
  
      }
  
-+    public void playSound(String s, float f, float f1) {}
++    public void broadcastSoundIncludingSource(String sound, float volume, float pitch) {} // PandaSpigot - Fix MC-2518
 +
      public boolean R() {
          return this.datawatcher.getByte(4) == 1;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index 524ff60ada7392ec1fd803661f957c19c50b2c2e..8ac5509b232b855d50d6dc1bd66ca44290d61bc0 100644
+index 524ff60ada7392ec1fd803661f957c19c50b2c2e..e6b34daa17fe9fb9732f90c0e5787a52e4e31e31 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
-@@ -258,6 +258,11 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -258,6 +258,13 @@ public abstract class EntityHuman extends EntityLiving {
          this.world.a(this, s, f, f1);
      }
  
++    // PandaSpigot start - Fix MC-2518
 +    @Override
-+    public void playSound(String s, float f, float f1) {
-+        this.world.a(this, s, f, f1, true);
++    public void broadcastSoundIncludingSource(String sound, float volume, float pitch) {
++        this.world.a(this, sound, volume, pitch, true);
 +    }
++    // PandaSpigot end
 +
      protected void b(ItemStack itemstack, int i) {
          if (itemstack.m() == EnumAnimation.DRINK) {
              this.makeSound("random.drink", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 32752dfad24bc7883b1ab52e29834f1aa6fa60c6..55eb094d7160e2cfddce46f1027ea07fcaffff43 100644
+index 32752dfad24bc7883b1ab52e29834f1aa6fa60c6..df3d65a80cb58affbd6326546f73c7d9f0b6c3fe 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -833,7 +833,7 @@ public abstract class EntityLiving extends Entity {
@@ -43,96 +45,92 @@ index 32752dfad24bc7883b1ab52e29834f1aa6fa60c6..55eb094d7160e2cfddce46f1027ea07f
  
      public void b(ItemStack itemstack) {
 -        this.makeSound("random.break", 0.8F, 0.8F + this.world.random.nextFloat() * 0.4F);
-+        this.playSound("random.break", 0.8F, 0.8F + this.world.random.nextFloat() * 0.4F);
++        this.broadcastSoundIncludingSource("random.break", 0.8F, 0.8F + this.world.random.nextFloat() * 0.4F); // PandaSpigot - Fix MC-2518
  
          for (int i = 0; i < 5; ++i) {
              Vec3D vec3d = new Vec3D(((double) this.random.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D);
 diff --git a/src/main/java/net/minecraft/server/IWorldAccess.java b/src/main/java/net/minecraft/server/IWorldAccess.java
-index 30709259194f6ba86d706b7cffbbf508ecf26c96..969e02a07ecedbb2218ac0a96787ceab8565b0b5 100644
+index 30709259194f6ba86d706b7cffbbf508ecf26c96..2f1c5104ed256bc2c3a270e13272ab783cd89d89 100644
 --- a/src/main/java/net/minecraft/server/IWorldAccess.java
 +++ b/src/main/java/net/minecraft/server/IWorldAccess.java
 @@ -12,6 +12,8 @@ public interface IWorldAccess {
  
      void a(EntityHuman entityhuman, String s, double d0, double d1, double d2, float f, float f1);
  
-+    void a(EntityHuman entityhuman, String s, double d0, double d1, double d2, float f, float f1, boolean sendToSource);
++    void a(EntityHuman entityhuman, String s, double d0, double d1, double d2, float f, float f1, boolean includeSource); // PandaSpigot - Add includeSource param
 +
      void a(int i, boolean flag, double d0, double d1, double d2, double d3, double d4, double d5, int... aint);
  
      void a(Entity entity);
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 412b354d1f57491bcb4f125e8d59e395bfe75da0..4abf6a11047b5e64c9d6fac4861d36511ae6c3dc 100644
+index 412b354d1f57491bcb4f125e8d59e395bfe75da0..19237d7619154848d4760b9d21c7c2ed02229609 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -1061,10 +1061,18 @@ public abstract class PlayerList {
+@@ -1065,6 +1065,12 @@ public abstract class PlayerList {
      }
  
-     public void sendPacketNearby(double d0, double d1, double d2, double d3, int i, Packet packet) {
--        this.sendPacketNearby((EntityHuman) null, d0, d1, d2, d3, i, packet);
-+        this.sendPacketNearby((EntityHuman) null, d0, d1, d2, d3, i, packet, false);
-     }
- 
--    public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i, Packet packet) {
-+    public void sendPacketNearby(double d0, double d1, double d2, double d3, int i, Packet packet, boolean sendToSource) {
-+        this.sendPacketNearby((EntityHuman) null, d0, d1, d2, d3, i, packet, sendToSource);
+     public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i, Packet packet) {
++    // PandaSpigot start - Add includeSource param
++        this.sendPacketNearby(entityhuman, d0, d1, d2, d3, i, packet, false);
 +    }
 +
-+    public void sendPacketNearby(EntityHuman entityHuman, double d0, double d1, double d2, double d3, int i, Packet packet) {
-+        this.sendPacketNearby(entityHuman, d0, d1, d2, d3, i, packet, false);
-+    }
-+
-+    public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i, Packet packet, boolean sendToSource) {
++    public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i, Packet packet, boolean includeSource) {
++    // PandaSpigot end
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
  
-@@ -1074,7 +1082,7 @@ public abstract class PlayerList {
+@@ -1074,7 +1080,7 @@ public abstract class PlayerList {
              }
              // CraftBukkit end
  
 -            if (entityplayer != entityhuman && entityplayer.dimension == i) {
-+            if ((sendToSource || entityplayer != entityhuman) && entityplayer.dimension == i) {
++            if ((includeSource || entityplayer != entityhuman) && entityplayer.dimension == i) { // PandaSpigot - Add includeSource param
                  double d4 = d0 - entityplayer.locX;
                  double d5 = d1 - entityplayer.locY;
                  double d6 = d2 - entityplayer.locZ;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 522c63e7f884a8b2202b111c81df9b54384703d5..8fdd50f374246c009fabcd3fba4f87dcb637c81f 100644
+index 522c63e7f884a8b2202b111c81df9b54384703d5..bd5ff511c6d882403fb07dcb2c3fe85544e921e1 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1052,6 +1052,10 @@ public abstract class World implements IBlockAccess {
+@@ -1052,6 +1052,12 @@ public abstract class World implements IBlockAccess {
      }
  
      public void a(EntityHuman entityhuman, String s, float f, float f1) {
++        // PandaSpigot start - Add includeSource param
 +        this.a(entityhuman, s, f, f1, false);
 +    }
 +
-+    public void a(EntityHuman entityhuman, String s, float f, float f1, boolean sendToSource) {
++    public void a(EntityHuman entityhuman, String s, float f, float f1, boolean includeSource) {
++    // PandaSpigot end
          // PandaSpigot start - PlayerSoundEvent
          com.hpfxd.pandaspigot.event.sound.PlayerSoundEvent event = new com.hpfxd.pandaspigot.event.sound.PlayerSoundEvent(
                  (org.bukkit.entity.Player) entityhuman.getBukkitEntity(), s, f, f1);
-@@ -1063,7 +1067,7 @@ public abstract class World implements IBlockAccess {
+@@ -1063,7 +1069,7 @@ public abstract class World implements IBlockAccess {
          f1 = event.getPitch();
          // PandaSpigot end
          for (int i = 0; i < this.u.size(); ++i) {
 -            ((IWorldAccess) this.u.get(i)).a(entityhuman, s, loc.getX(), loc.getY(), loc.getZ(), f, f1); // PandaSpigot - Use x, y, z from event
-+            ((IWorldAccess) this.u.get(i)).a(entityhuman, s, loc.getX(), loc.getY(), loc.getZ(), f, f1, sendToSource); // PandaSpigot - Use x, y, z from event
++            ((IWorldAccess) this.u.get(i)).a(entityhuman, s, loc.getX(), loc.getY(), loc.getZ(), f, f1, includeSource); // PandaSpigot - Use x, y, z from event, add includeSource param
          }
  
      }
 diff --git a/src/main/java/net/minecraft/server/WorldManager.java b/src/main/java/net/minecraft/server/WorldManager.java
-index 923887bd010fa1fe1958a50ae39196bfa7f07bcd..41bf682c412d7e2d1e96dc15b931031ba30a24ef 100644
+index 923887bd010fa1fe1958a50ae39196bfa7f07bcd..45f43cd004cd95f1195d8c84780697a5287a6066 100644
 --- a/src/main/java/net/minecraft/server/WorldManager.java
 +++ b/src/main/java/net/minecraft/server/WorldManager.java
-@@ -30,7 +30,12 @@ public class WorldManager implements IWorldAccess {
+@@ -29,8 +29,14 @@ public class WorldManager implements IWorldAccess {
+     }
  
      public void a(EntityHuman entityhuman, String s, double d0, double d1, double d2, float f, float f1) {
-         // CraftBukkit - this.world.dimension
--        this.a.getPlayerList().sendPacketNearby(entityhuman, d0, d1, d2, f > 1.0F ? (double) (16.0F * f) : 16.0D, this.world.dimension, new PacketPlayOutNamedSoundEffect(s, d0, d1, d2, f, f1));
++    // PandaSpigot start - Add includeSource param
 +        this.a(entityhuman, s, d0, d1, d2, f, f1, false);
 +    }
 +
-+    public void a(EntityHuman entityhuman, String s, double d0, double d1, double d2, float f, float f1, boolean sendToSource) {
-+        // CraftBukkit - this.world.dimension
-+        this.a.getPlayerList().sendPacketNearby(entityhuman, d0, d1, d2, f > 1.0F ? (double) (16.0F * f) : 16.0D, this.world.dimension, new PacketPlayOutNamedSoundEffect(s, d0, d1, d2, f, f1), sendToSource);
++    public void a(EntityHuman entityhuman, String s, double d0, double d1, double d2, float f, float f1, boolean includeSource) {
+         // CraftBukkit - this.world.dimension
+-        this.a.getPlayerList().sendPacketNearby(entityhuman, d0, d1, d2, f > 1.0F ? (double) (16.0F * f) : 16.0D, this.world.dimension, new PacketPlayOutNamedSoundEffect(s, d0, d1, d2, f, f1));
++        this.a.getPlayerList().sendPacketNearby(entityhuman, d0, d1, d2, f > 1.0F ? (double) (16.0F * f) : 16.0D, this.world.dimension, new PacketPlayOutNamedSoundEffect(s, d0, d1, d2, f, f1), includeSource);
++    // PandaSpigot end
      }
  
      public void a(int i, int j, int k, int l, int i1, int j1) {}
