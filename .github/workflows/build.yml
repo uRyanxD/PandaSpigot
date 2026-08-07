@@ -27,9 +27,6 @@ jobs:
       - name: Setup build environment
         run: ./panda setup
 
-      - name: Apply patches
-        run: ./panda patch
-
       - name: Build
         run: ./gradlew build paperclipJar
 

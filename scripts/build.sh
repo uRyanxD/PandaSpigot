@@ -9,8 +9,4 @@ gitcmd="git -c commit.gpgsign=false"
     echo "PandaSpigot setup stage failed"
     exit 1
 ) || exit 1
-
-if [ "$2" == "--jar" ]; then
-    ./gradlew build && ./scripts/paperclip.sh "$basedir"
-fi
 ) || exit 1
