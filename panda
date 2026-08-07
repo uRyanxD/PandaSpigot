@@ -49,7 +49,7 @@ case "$1" in
     (
         set -e
         cd "$basedir"
-        scripts/build.sh "$basedir" "--setup" || exit 1
+        scripts/setup.sh "$basedir" || exit 1
     ) || failed=1
     ;;
     "p" | "patch")
