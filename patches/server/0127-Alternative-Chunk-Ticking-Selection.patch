@@ -5,10 +5,10 @@ Subject: [PATCH] Alternative Chunk Ticking Selection
 
 
 diff --git a/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java b/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java
-index 360ed37b95fce68941c234615b465090b8ea7308..aa2af045e8b5be60b5fae412c8dd29bd2e288639 100644
+index 510c473609ca36c50a549a200d7f063f47809db8..318bf4463975a4b9feb652ed09ac69000843ca2a 100644
 --- a/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java
 +++ b/src/main/java/com/hpfxd/pandaspigot/config/PandaSpigotWorldConfig.java
-@@ -59,4 +59,15 @@ public class PandaSpigotWorldConfig {
+@@ -53,4 +53,15 @@ public class PandaSpigotWorldConfig {
      @Comment("This option controls whether or not there is a chance for arrow crits to deal extra damage.\n" +
              "By default, this is true (vanilla behaviour)")
      public boolean randomArrowDamage = true;
@@ -177,7 +177,7 @@ index 9b86cdd3b83ae8b0c040dc9d250b54684d0b7510..522c63e7f884a8b2202b111c81df9b54
          int chunksPerPlayer = Math.min( 200, Math.max( 1, (int) ( ( ( optimalChunks - players.size() ) / (double) players.size() ) + 0.5 ) ) );
          int randRange = 3 + chunksPerPlayer / 30;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 864b63f20167491ecef7e51be7d170d8b141d166..1c9e429b4107daf0991fe0c61bd5377cf4c22c95 100644
+index be443eacd8f563cb9a609cff31c526dd62e4dbc7..c1fa816224dd4627b569dbd8a122d4efa3dfe77e 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -372,7 +372,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
